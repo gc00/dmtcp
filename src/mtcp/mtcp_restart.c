@@ -112,6 +112,7 @@ static void mmapfile(int fd, void *buf, size_t size, int prot, int flags);
 #endif
 static void read_shared_memory_area_from_file(int fd, Area* area, int flags);
 static void lock_file(int fd, char* name, short l_type);
+static char* fix_parent_directories(char* filename);
 // static char* fix_filename_if_new_cwd(char* filename);
 static int open_shared_file(char* filename);
 static void adjust_for_smaller_file_size(Area *area, int fd);
@@ -864,6 +865,10 @@ static int read_one_memory_area(int fd)
         imagefd = mtcp_sys_open (area.name, O_CREAT|O_RDWR, 0);
         if (imagefd >= 0) {
           mtcp_sys_unlink(area.name);
+        } else if (fix_parent_directories(area.name) == area.name) {
+          // Go on and call read_shared_memory_area_from_file()
+          // area.name will be recreated if needed.  (For example, the
+          // user might have unlinked this file before checkpoint.)
         } else {
           // We don't have permission to re-create shared file.
           // Open it as anonymous private, and hope for the best.
@@ -970,14 +975,20 @@ static void read_shared_memory_area_from_file(int fd, Area* area, int flags)
 
   /* Check to see if the filename ends with " (deleted)" */
   if (mtcp_strendswith(area_name, DELETED_FILE_SUFFIX)) {
+    // FIXME:  Shouldn't we also unlink area_name after re-mapping it?
     area_name[ mtcp_strlen(area_name) - mtcp_strlen(DELETED_FILE_SUFFIX) ] =
       '\0';
+    if (fix_parent_directories(area_name) != area_name) {
+      MTCP_PRINTF("error %d re-creating directory %s\n",
+                  mtcp_sys_errno, area_name);
+      mtcp_abort();
+    }
   }
 
   imagefd = mtcp_sys_open (area_name, flags, 0);  // open it
 
   if (imagefd < 0 && mtcp_sys_errno != ENOENT) {
-    MTCP_PRINTF("error %d opening mmap file %s with flags:%d\n",
+    MTCP_PRINTF("error %d opening mmaped file %s with flags:%d\n",
                 mtcp_sys_errno, area_name, flags);
     mtcp_abort();
   }
@@ -1262,10 +1273,32 @@ static void lock_file(int fd, char* name, short l_type)
   }
 }
 
+static char* fix_parent_directories(char* filename) {
+  int mtcp_sys_errno;
+  int i;
+  for (i=1; filename[i] != '\0'; i++) {
+    if (filename[i] == '/') {
+      int rc;
+      filename[i] = '\0';
+      rc = mtcp_sys_mkdir(filename, S_IRWXU);
+      if (rc < 0 && mtcp_sys_errno != EEXIST ) {
+        MTCP_PRINTF("error %d re-creating directory %s\n",
+		    mtcp_sys_errno, filename);
+        filename[i] = '/';  // Restore original filename
+	mtcp_abort();
+      } // else parent directory already exists or was re-created
+      // FIXME:  We should unlink parent directories if we re-created them.
+      filename[i] = '/';  // Restore original filename
+    }
+  }
+  return filename;  // Success.  All parent directories now exist.
+}
+
 #if 0
 /* Adjust for new pwd, and recreate any missing subdirectories. */
 static char* fix_filename_if_new_cwd(char* filename)
 {
+  int mtcp_sys_errno;
   int i;
   int fIndex;
   int errorFilenameFromPreviousCwd = 0;
