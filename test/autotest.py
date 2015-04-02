@@ -777,7 +777,8 @@ runTest("frisbee",       3, ["./test/frisbee "+p1+" localhost "+p2,
                              "./test/frisbee "+p3+" localhost "+p1+" starter"])
 os.environ['DMTCP_GZIP'] = "0"
 
-runTest("shared-memory", 2, ["./test/shared-memory"])
+runTest("shared-memory1", 2, ["./test/shared-memory1"])
+runTest("shared-memory2", 2, ["./test/shared-memory2"])
 
 runTest("sysv-shm1",     2, ["./test/sysv-shm1"])
 runTest("sysv-shm2",     2, ["./test/sysv-shm2"])
