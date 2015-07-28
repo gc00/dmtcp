@@ -137,11 +137,6 @@ namespace dmtcp {
                     DmtcpUniqueProcessId *compId,
                     CoordinatorInfo *coordInfo,
                     struct in_addr *localIP);
-    void initializeHeader(const char *tmpDir,
-                          const char *installDir,
-                          DmtcpUniqueProcessId *compId,
-                          CoordinatorInfo *coordInfo,
-                          struct in_addr *localIP);
     void suspended();
     void preCkpt();
     void refill();

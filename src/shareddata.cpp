@@ -64,7 +64,10 @@ void dmtcp_SharedData_EventHook(DmtcpEvent_t event, DmtcpEventData_t *data)
   }
 }
 
-void SharedData::initializeHeader(const char *tmpDir,
+// This C++ construct makes this file-private (similar to 'static' fnc in C)
+namespace {
+// Called by SharedData::initialize()
+void initializeHeader(const char *tmpDir,
                                   const char *installDir,
                                   DmtcpUniqueProcessId *compId,
                                   CoordinatorInfo *coordInfo,
@@ -76,6 +79,7 @@ void SharedData::initializeHeader(const char *tmpDir,
   JASSERT(lseek(PROTECTED_SHM_FD, size, SEEK_SET) == size)
     (JASSERT_ERRNO);
   Util::writeAll(PROTECTED_SHM_FD, "", 1);
+  // SharedData::initialize() already allocated sharedDataHeader
   memset(sharedDataHeader, 0, size);
 
   strcpy(sharedDataHeader->versionStr, SHM_VERSION_STR);
@@ -111,6 +115,7 @@ void SharedData::initializeHeader(const char *tmpDir,
   JASSERT(strlen(installDir) < sizeof(sharedDataHeader->installDir) - 1)
     (installDir);
   strcpy(sharedDataHeader->installDir, installDir);
+}
 }
 
 bool SharedData::initialized()
