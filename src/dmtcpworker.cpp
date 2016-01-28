@@ -294,6 +294,7 @@ extern "C" void dmtcp_initialize()
           programName != "dmtcp_comand"       &&
           programName != "dmtcp_restart"      &&
           programName != "mtcp_restart"       &&
+          programName != "rsh"                &&
           programName != "ssh")
     (programName) .Text("This program should not be run under ckpt control");
 
