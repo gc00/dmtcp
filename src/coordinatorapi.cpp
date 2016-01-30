@@ -639,7 +639,8 @@ void CoordinatorAPI::sendCkptFilename()
          hostname.c_str());
 
   JTRACE("recording filenames") (ckptFilename) (hostname) (shellType);
-  msg.extraBytes = ckptFilename.length() + 1 + hostname.length() + 1 + shellType.length() + 1;
+  msg.extraBytes = ckptFilename.length() + 1 + hostname.length() + 1 +
+                   shellType.length() + 1;
 
   sendMsgToCoordinator(msg, buf, buflen);
 }

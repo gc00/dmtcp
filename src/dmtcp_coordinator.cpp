@@ -469,9 +469,13 @@ void DmtcpCoordinator::recordCkptFilename(CoordClient *client,
   JASSERT(extraData != NULL)
     .Text("extra data expected with DMT_CKPT_FILENAME message");
 
-  string ckptFilename = extraData;
+  string ckptFilename;
+  string hostname;
+  string shellType;
+
+  ckptFilename = extraData;
   shellType = extraData + ckptFilename.length() + 1;
-  string hostname = extraData + ckptFilename.length() + 1;
+  hostname = extraData + shellType.length() + 1 + ckptFilename.length() + 1;
 
   JTRACE ( "recording restart info with shellType" )
          ( ckptFilename ) ( hostname ) (shellType);
