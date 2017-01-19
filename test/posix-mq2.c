@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Note:  /dev/mqueue shows the currently allocated message queues
+
 struct msgbuf {
   mqd_t mqdes;
   int   expected;
@@ -154,8 +156,9 @@ int main(int argc, char **argv)
   char mqname[256];
   char mqname2[256];
   char *user = getenv("USER");
-  sprintf(mqname, "/dmtcp-mq-%s", user == NULL ? "" : user);
-  sprintf(mqname2, "/dmtcp-mq-2-%s", user == NULL ? "" : user);
+
+  sprintf(mqname, "/dmtcp-mq2a-%s", user == NULL ? "" : user);
+  sprintf(mqname2, "/dmtcp-mq2b-%s", user == NULL ? "" : user);
 
   mq_unlink(mqname);
   mq_unlink(mqname2);
