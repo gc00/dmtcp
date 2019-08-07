@@ -1,0 +1,34 @@
+# USAGE:  gdb -x THIS_FILE
+#   Conventional filename for THIS_FILE:  gdbinit
+#   This file is an example.  Modify the commands below for your situation.
+
+# Force any existing DMTCP coordinator to quit
+shell bin/dmtcp_command -q
+
+exec bin/dmtcp_launch
+set args -i5 test/pthread1
+
+handle SIGUSR2 stop print pass
+handle SIGUSR2
+set breakpoint pending on
+# Stop if about to exit:
+break _exit
+# Convenient point to stop and look, just after a checkpoint
+break 'dmtcp::callbackPostCheckpoint(bool, char*)'
+# Define convenience command for later debugging: procmaps
+def procmaps
+  python gdb.execute("shell cat /proc/" + \
+    str(gdb.selected_inferior().pid) + "/maps")
+end
+
+break execvp
+run
+
+break main
+cont
+# Example of setting a breakpoint.
+# Use:  'info functions updateTid' to discover full method signature.
+break 'dmtcp::ThreadList::updateTid(Thread*)'
+
+# Change comment into command, to continue automatically
+# cont
