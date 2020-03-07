@@ -154,8 +154,11 @@ pthread_atfork_child()
   DmtcpWorker::resetOnFork();
 }
 
+// We re-factor to have fork() call dmtcp_fork().
+// This is needed by dmtcpplugin.cpp:dmtcp_get_libc_addr() in case it is
+//   called on 'fork':  dmtcp_get_libc_addr("fork")
 extern "C" pid_t
-fork()
+dmtcp_fork()
 {
   if (isPerformingCkptRestart()) {
 #ifndef __aarch64__
@@ -575,6 +578,12 @@ patchUserEnv(vector<string>env, const char *filename)
   JTRACE("Patched user envp...")  (out.str());
 
   return result;
+}
+
+extern "C" int
+fork()
+{
+  return dmtcp_fork();
 }
 
 extern "C" int
