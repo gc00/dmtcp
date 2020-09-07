@@ -179,6 +179,7 @@ shmdt(const void *shmaddr)
   return ret;
 }
 
+#ifdef __GLIBC__
 // Open MPI 2.x uses dlsym() to locate the address of certain functions
 // in order to install its own hooks. For us, shmdt() is the only interesting
 // one. Instead of giving the address of our wrapper to the hook library, we
@@ -191,6 +192,10 @@ void *dlsym(void *handle, const char *symbol)
   DMTCP_PLUGIN_ENABLE_CKPT();
   return ret;
 }
+#else
+// Other libc implementations do not use the broken version system of glibc.
+// So, we can skip this wrapper.
+#endif
 
 extern "C"
 int
