@@ -28,6 +28,10 @@
 # include "config.h"
 # include "dmtcp.h"
 
+# ifndef __GLIBC__
+#  define __GLIBC_PREREQ(a,b) -1
+# endif
+
 # if __GLIBC_PREREQ(2, 21)
 #  define EVENTFD_VAL_TYPE    unsigned int
 # else // if __GLIBC_PREREQ(2, 21)

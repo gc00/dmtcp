@@ -33,6 +33,17 @@
 #define  SHELL_PATH "/bin/sh"   /* Path of the shell.  */
 #define  SHELL_NAME "sh"     /* Name to give it.  */
 
+#ifndef TEMP_FAILURE_RETRY
+  /* Evaluate EXPRESSION, and repeat as long as it returns -1 with `errno'
+     set to EINTR.  */
+# define TEMP_FAILURE_RETRY(expression) \
+  (__extension__                                                         \
+    ({ long int __result;                                                \
+      do __result = (long int) (expression);                             \
+      while (__result == -1L && errno == EINTR);                         \
+      __result; }))
+#endif
+
 extern "C" int
 dmtcp_execvpe(const char *filename, char *const argv[], char *const envp[]);
 
@@ -93,7 +104,7 @@ out:
     (void)sigprocmask(SIG_SETMASK, &omask, (sigset_t *)NULL);
 
     /* Exec the shell.  */
-    (void)dmtcp_execvpe(SHELL_PATH, (char *const *)new_argv, __environ);
+    (void)dmtcp_execvpe(SHELL_PATH, (char *const *)new_argv, environ);
     _exit(127);
   } else if (pid < (pid_t)0) {
     /* The fork failed.  */

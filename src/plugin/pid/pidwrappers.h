@@ -64,7 +64,7 @@ struct user_desc {
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <syslog.h>
-#include <thread_db.h>
+// #include <thread_db.h>
 
 // FIXME:   We define _real_msgctl() in terms of msgctl() here.  So,
 // we need sys/msg.h.  But sys/msg.h also declares msgrcv().
@@ -87,6 +87,18 @@ struct user_desc {
 #include <unistd.h>
 
 #include "dmtcp.h"
+
+// musl libc defines open64 and fopen64 as macros, expanding to open/fopen.
+// This creates a redefinition in MACRO(open)/MACRO(open64), etc.
+// So, if we detect these are macros, redefine them as harmless unused symbols.
+#ifdef open64
+# undef open64
+# define open64 open64_unused
+#endif
+#ifdef fopen64
+# undef fopen64
+# define fopen64 fopen64_unused
+#endif
 
 // Keep in sync with dmtcp/src/constants.h
 #define ENV_VAR_VIRTUAL_PID "DMTCP_VIRTUAL_PID"
@@ -159,7 +171,6 @@ LIB_PRIVATE int dmtcp_tgkill(int tgid, int tid, int sig);
   MACRO(open64)                        \
   MACRO(close)                         \
   MACRO(dup2)                          \
-  MACRO(fopen64)                       \
   MACRO(opendir)                       \
   MACRO(__xstat)                       \
   MACRO(__xstat64)                     \
@@ -174,6 +185,7 @@ LIB_PRIVATE int dmtcp_tgkill(int tgid, int tid, int sig);
 
 #define FOREACH_FOPEN_WRAPPER(MACRO) \
   MACRO(fopen)                       \
+  MACRO(fopen64)                     \
   MACRO(fclose)
 
 #define FOREACH_SCHED_WRAPPER(MACRO) \
@@ -264,12 +276,21 @@ pid_t _real_wait4(pid_t pid,
                   int options,
                   struct rusage *rusage);
 LIB_PRIVATE extern int send_sigwinch;
+#ifdef __GLIBC__
 int _real_ioctl(int d, unsigned long int request, ...) __THROW;
+#else
+int _real_ioctl(int d, unsigned long int request, ...);
+#endif
 
 int _real_setgid(gid_t gid);
 int _real_setuid(uid_t uid);
 
+#ifdef __GLIBC__
 long _real_ptrace(enum __ptrace_request request,
+#else
+// enum __ptrace_request used by glibc, but not defined in musl libc; Use: 'int'
+long _real_ptrace(int request,
+#endif 
                   pid_t pid,
                   void *addr,
                   void *data);

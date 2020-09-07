@@ -204,7 +204,7 @@ ptmxWriteAll(int fd, const void *buf, bool isPacketMode)
 PtyConnection::PtyConnection(int fd,
                              const char *path,
                              int flags,
-                             mode_t mode,
+                             int64_t mode,
                              int type)
   : Connection(type)
   , _flags(flags)

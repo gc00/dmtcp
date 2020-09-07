@@ -23,7 +23,9 @@
 #define JASSERT_H
 
 #include <errno.h>
-#include <execinfo.h> /* For backtrace() */
+#ifdef __GLIBC__
+# include <execinfo.h> /* For backtrace() */
+#endif
 #include <iostream>
 #include <sstream>
 #include <string.h>

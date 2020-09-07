@@ -20,12 +20,17 @@
  ****************************************************************************/
 
 #include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "../jalib/jassert.h"
 #include "dmtcpworker.h"
 #include "syscallwrappers.h"
+
+#ifndef __GLIBC__
+# define __GLIBC_PREREQ(a,b) -1
+#endif
 
 #ifndef EXTERNC
 # define EXTERNC extern "C"
@@ -57,6 +62,8 @@ bannedSignalNumber()
   return stopSignal;
 }
 
+#if defined(__GLIBC_PREREQ) && (__GLIBC_PREREQ(0,0) != -1)
+// *** If GLIBC and not alternative libc;  These are BSD fnc's, not POSIX.
 static int
 patchBSDMask(int mask)
 {
@@ -82,6 +89,7 @@ patchBSDUserMask(int how, const int mask, int *oldmask)
     checkpointSignalBlockedForProcess = ((mask & bannedMask) != 0);
   }
 }
+#endif
 
 static inline sigset_t
 patchPOSIXMask(const sigset_t *mask)
@@ -179,6 +187,8 @@ sigvec(int signum, const struct sigvec *vec, struct sigvec *ovec)
 }
 #endif // if !__GLIBC_PREREQ(2, 21)
 
+#if defined(__GLIBC_PREREQ) && (__GLIBC_PREREQ(0,0) != -1)
+// *** If GLIBC and not alternative libc;  These are BSD fnc's, not POSIX.
 // set the mask
 EXTERNC int
 sigblock(int mask)
@@ -206,6 +216,7 @@ siggetmask(void)
   patchBSDUserMask(SIG_BLOCK, 0, &oldmask);
   return oldmask;
 }
+#endif
 
 EXTERNC int
 sigprocmask(int how, const sigset_t *set, sigset_t *oldset)

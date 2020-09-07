@@ -449,7 +449,13 @@ _real_fopen(const char *path, const char *mode)
 FILE *
 _real_fopen64(const char *path, const char *mode)
 {
+// -1 means alternative libc to GLIBC
+#if defined(__GLIBC_PREREQ) && (__GLIBC_PREREQ(0,0) != -1)
   REAL_FUNC_PASSTHROUGH_TYPED(FILE *, fopen64) (path, mode);
+#else
+  // fopen64 not used in musl libc
+  REAL_FUNC_PASSTHROUGH_TYPED(FILE *, fopen) (path, mode);
+#endif
 }
 
 int

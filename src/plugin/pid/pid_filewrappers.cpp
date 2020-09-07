@@ -62,7 +62,12 @@ int send_sigwinch = 0;
 
 
 extern "C" int
+#ifdef __GLIBC__
 ioctl(int d, unsigned long int request, ...)
+#else
+// Open Group POSIX uses this, while glibc chooses above declaration
+ioctl(int d, int request, ...)
+#endif
 {
   va_list ap;
   int retval;
