@@ -307,6 +307,9 @@ clock_getcpuclockid(pid_t pid, clockid_t *clock_id)
   return ret;
 }
 
+#ifdef __GLIBC__
+// musl libc appears not to support SIGEV_THREAD_ID (Linux-specific), nor
+//   _sigev_un._tid.  So, we comment out this wrapper.
 extern "C" int
 timer_create(clockid_t clockid, struct sigevent *sevp, timer_t *timerid)
 {
@@ -321,6 +324,7 @@ timer_create(clockid_t clockid, struct sigevent *sevp, timer_t *timerid)
   }
   return _real_timer_create(clockid, sevp, timerid);
 }
+#endif
 
 #if 0
 extern "C"

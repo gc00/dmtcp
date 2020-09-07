@@ -459,12 +459,15 @@ extern "C" int creat(const char *path, mode_t mode)
   return _open_open64_work(_real_open, path, O_CREAT|O_WRONLY|O_TRUNC, mode);
 }
 
+// if GLIBC and not alternate libc
+#if defined(__GLIBC_PREREQ)
 extern "C" int creat64(const char *path, mode_t mode)
 {
   // creat() is equivalent to open() with flags equal to
   // O_CREAT|O_WRONLY|O_TRUNC
   return _open_open64_work(_real_open64, path, O_CREAT|O_WRONLY|O_TRUNC, mode);
 }
+#endif
 
 static FILE *_fopen_fopen64_work(FILE*(*fn) (const char *path,
                                              const char *mode),
@@ -484,10 +487,13 @@ extern "C" FILE *fopen(const char* path, const char* mode)
   return _fopen_fopen64_work(_real_fopen, path, mode);
 }
 
+// if GLIBC and not alternate libc
+#if defined(__GLIBC_PREREQ)
 extern "C" FILE *fopen64(const char* path, const char* mode)
 {
   return _fopen_fopen64_work(_real_fopen64, path, mode);
 }
+#endif
 
 extern "C" FILE *freopen(const char *path, const char *mode, FILE *stream)
 {
@@ -520,6 +526,8 @@ extern "C" int __openat_2(int dirfd, const char *path, int flags)
   return openat(dirfd, path, flags, 0);
 }
 
+// if GLIBC and not alternate libc
+#if defined(__GLIBC_PREREQ)
 extern "C" int openat64(int dirfd, const char *path, int flags, ...)
 {
   va_list arg;
@@ -531,7 +539,10 @@ extern "C" int openat64(int dirfd, const char *path, int flags, ...)
   int fd = _real_openat64(dirfd, phys_path, flags, mode);
   return fd;
 }
+#endif
 
+// if GLIBC and not alternate libc
+#if defined(__GLIBC_PREREQ)
 extern "C" int openat64_2(int dirfd, const char *path, int flags)
 {
   return openat64(dirfd, path, flags, 0);
@@ -541,6 +552,7 @@ extern "C" int __openat64_2(int dirfd, const char *path, int flags)
 {
   return openat64(dirfd, path, flags, 0);
 }
+#endif
 
 extern "C" DIR *opendir(const char *name)
 {
@@ -755,6 +767,14 @@ extern "C" int statfs(const char *path, struct statfs *buf)
  *
  * path should be a physical path.
  */
+#ifndef _STAT_VER
+// Needed for musl libc and other non-glibc.
+# ifdef __x86_64__
+#  define _STAT_VER        1 /* x86_64 Linux */
+# else
+#  define _STAT_VER        3 /* other Linux */
+# endif
+#endif
 static dmtcp::string
 resolve_symlink(const char *path)
 {

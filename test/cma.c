@@ -8,6 +8,10 @@
 #include <assert.h>
 #include <unistd.h>
 
+#ifndef __GLIBC__
+# define __GLIBC_PREREQ(a,b) -1
+#endif
+
 int
 main()
 {

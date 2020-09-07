@@ -541,7 +541,12 @@ wait4(pid_t pid, __WAIT_STATUS status, int options, struct rusage *rusage)
 
 #if 0
 extern "C" long
+#ifdef __GLIBC__
 ptrace(enum __ptrace_request request, ...)
+#else
+// enum __ptrace_request used by glibc, but not defined in musl libc; Use: 'int'
+ptrace(int request, ...)
+#endif
 {
   va_list ap;
   pid_t virtualPid;

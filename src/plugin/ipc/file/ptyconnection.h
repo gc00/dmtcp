@@ -49,7 +49,7 @@ class PtyConnection : public Connection
 
     PtyConnection() {}
 
-    PtyConnection(int fd, const char *path, int flags, mode_t mode, int type);
+    PtyConnection(int fd, const char *path, int flags, int64_t mode, int type);
 
     string ptsName() { return _ptsName;  }
 

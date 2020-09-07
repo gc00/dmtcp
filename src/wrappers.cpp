@@ -350,12 +350,16 @@ creat(const char *path, mode_t mode)
 }
 
 
+#ifndef creat64
 extern "C" int
 creat64(const char *path, mode_t mode)
 {
   int flags = O_CREAT | O_WRONLY | O_TRUNC;
   return dmtcp_openat(AT_FDCWD, path, flags | O_LARGEFILE, mode);
 }
+#else
+// musl libc defines creat64 as macro expanding to creat
+#endif
 
 extern "C" int
 close(int fd)
