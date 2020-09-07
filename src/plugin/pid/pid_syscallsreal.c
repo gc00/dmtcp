@@ -43,6 +43,15 @@ typedef void * (*dlsym_fnptr_t) (void *handle, const char *symbol);
 static void *pid_real_func_addr[numPidVirtWrappers];
 static int pid_wrappers_initialized = 0;
 
+#ifndef __GLIBC__
+// For other libc's (non-glibc), we don't need the DMTCP fix for the broken
+//   glibc versioned symbols concept.
+# undef _real_dlsym
+# undef dmtcp_dlvsym
+# define _real_dlsym(handle,symbol) dlsym(handle,symbol)
+# define dmtcp_dlvsym(handle,symbol,version) dlsym(handle,symbol)
+#endif
+
 #define GET_FUNC_ADDR(name) \
   pid_real_func_addr[PIDVIRT_ENUM(name)] = _real_dlsym(RTLD_NEXT, # name);
 
