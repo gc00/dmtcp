@@ -15,12 +15,18 @@
 #ifndef DMTCP_H
 #define DMTCP_H
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <netinet/ip.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <dlfcn.h>  /* for NEXT_FNC() */
 
+#if 0
 #ifndef __USE_GNU
 # define __USE_GNU_NOT_SET
 # define __USE_GNU
@@ -30,6 +36,7 @@
 # undef __USE_GNU_NOT_SET
 # undef __USE_GNU
 #endif // ifdef __USE_GNU_NOT_SET
+#endif
 
 #ifndef DMTCP_PACKAGE_VERSION
 # include "dmtcp/version.h"
@@ -542,6 +549,16 @@ void dmtcp_plugin_enable_ckpt(void);
 void *dmtcp_dlsym(void *handle, const char *symbol) __attribute((weak));
 void *dmtcp_dlvsym(void *handle, char *symbol, const char *version);
 void *dmtcp_dlsym_lib(const char *libname, const char *symbol);
+
+#ifndef __GLIBC__
+// dmtcp_dlsym was invented to correctly get the default version of a symbol.
+// GLIBC chooses oldest version of a symbol instead (for backwards
+//   compatibility??).
+// Since musl libc (and others) don't use the broken versioned symbols, we
+//   can immediately defer to the real dlsym(). 
+# define dmtcp_dlsym(handle,symbol) dlsym(handle,symbol)
+# define dmtcp_dlvsym(handle,symbol,version) dlsym(handle,symbol)
+#endif
 
 /*
  * Returns the offset of the given function within the given shared library
