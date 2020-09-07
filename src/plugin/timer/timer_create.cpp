@@ -41,8 +41,8 @@ struct timer {
   int sigev_notify;
 
   /* Parameters for the thread to be started for SIGEV_THREAD.  */
-  void (*thrfunc) (sigval_t);
-  sigval_t sival;
+  void (*thrfunc) (union sigval);
+  union sigval sival;
   pthread_attr_t attr;
 
   /* Next element in list of active SIGEV_THREAD timers.  */
@@ -50,8 +50,8 @@ struct timer {
 };
 
 struct thread_start_data {
-  void (*thrfunc) (sigval_t);
-  sigval_t sival;
+  void (*thrfunc) (union sigval);
+  union sigval sival;
 };
 
 /* List of active SIGEV_THREAD timers.  */
@@ -122,8 +122,13 @@ timer_create_sigev_thread(clockid_t clock_id,
   /* Create the event structure for the kernel timer.  */
   sevOut->sigev_value.sival_ptr = newp;
   sevOut->sigev_signo = SIGTIMER;
+#ifdef __GLIBC__
   sevOut->sigev_notify = SIGEV_SIGNAL | SIGEV_THREAD_ID;
   sevOut->_sigev_un._tid = helper_tid;
+#else
+  // musl libc doesn't support SIGEV_THREAD_ID.  (Linux-specific ??)
+  sevOut->sigev_notify = SIGEV_SIGNAL;
+#endif
 
   /* Create the timer.  */
   int res = _real_timer_create(clock_id, sevOut, timerid);
@@ -155,8 +160,8 @@ timer_sigev_thread(void *arg)
 
   struct thread_start_data *td = (struct thread_start_data *)arg;
 
-  void (*thrfunc) (sigval_t) = td->thrfunc;
-  sigval_t sival = td->sival;
+  void (*thrfunc) (union sigval) = td->thrfunc;
+  union sigval sival = td->sival;
 
   /* The TD object was allocated in timer_helper_thread.  */
   JALLOC_FREE(td);

@@ -1,4 +1,4 @@
-#define _GNU_SOURCE 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   // 'read' and 'write' are never wrapped by DMTCP.
   // So, these will be the landmarks, and we'll compute an offset.
   char* read_ptr = dlsym(RTLD_NEXT, "read");
-  
+
   fflush(stdout);
   FILE *libc_stream =
     popen("ldd /bin/ls | grep  libc.so |"

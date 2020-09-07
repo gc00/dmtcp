@@ -26,7 +26,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <execinfo.h>  /* For backtrace() */
+#ifdef __GLIBC__
+# include <execinfo.h>  /* For backtrace() */
+#endif
 #include <fstream>
 
 #include "jalib.h"
@@ -269,6 +271,7 @@ writeJbacktraceMsg()
 static void
 writeBacktrace()
 {
+#ifdef __GLIBC__
   void *buffer[BT_SIZE];
   int nptrs = backtrace(buffer, BT_SIZE);
   dmtcp::string path = tmpDir() + "/backtrace." + uniquePidStr();
@@ -279,6 +282,7 @@ writeBacktrace()
     backtrace_symbols_fd(buffer, nptrs, fd);
     jalib::close(fd);
   }
+#endif
 }
 
 // This routine is called when JASSERT triggers.  Something failed.

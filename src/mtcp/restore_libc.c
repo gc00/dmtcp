@@ -23,7 +23,9 @@
 #include <pthread.h> // for pthread_self(), needed for WSL
 #include <elf.h>
 #include <errno.h>
-#include <gnu/libc-version.h>
+#ifdef __GLIBC_PREREQ
+# include <gnu/libc-version.h>
+#endif
 #include <linux/version.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,6 +33,11 @@
 #include <sys/resource.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+
+#ifndef __GLIBC__
+# define __GLIBC_PREREQ(a,b) -1
+# define gnu_get_libc_version() "2"
+#endif
 
 int mtcp_sys_errno;
 
@@ -63,7 +70,11 @@ static int glibcMinorVersion()
     char *ptr;
     int major = (int) strtol(gnu_get_libc_version(), &ptr, 10);
     ASSERT (major == 2);
+#ifndef __GLIBC__
+    minor = 24;
+#else
     minor = (int) strtol(ptr+1, NULL, 10);
+#endif
   }
   return minor;
 }

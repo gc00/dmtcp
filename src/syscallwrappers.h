@@ -39,6 +39,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#ifndef __GLIBC__
+# define __GLIBC_PREREQ(a,b) -1
+#endif
+
 // FIXME:  The SLES 10 (glibc-2.4) declaration for msgctl differs from
 // our wrapper's declaration, which uses the POSIX declaration.
 // If for syscallsreal.c, use the local (e.g., SLES 10) decl.
@@ -108,6 +112,26 @@ LIB_PRIVATE int dmtcp_tgkill(int tgid, int tid, int sig);
 extern int dmtcp_wrappers_initializing;
 
 LIB_PRIVATE extern __thread int thread_performing_dlopen_dlsym;
+
+// musl libc defines open64 and fopen64 as macros, expanding to open/fopen.
+// This creates a redefinition in MACRO(open)/MACRO(open64), etc.
+// So, if we detect these are macros, redefine them as harmless unused symbols.
+#ifdef open64
+# undef open64
+# define open64 open64_unused
+#endif
+#ifdef fopen64
+# undef fopen64
+# define fopen64 fopen64_unused
+#endif
+#ifdef freopen64
+# undef freopen64
+# define freopen64 freopen64_unused
+#endif
+#ifdef openat64
+# undef openat64
+# define openat64 openat64_unused
+#endif
 
 #define FOREACH_DMTCP_WRAPPER(MACRO)  \
   MACRO(dlopen)                       \

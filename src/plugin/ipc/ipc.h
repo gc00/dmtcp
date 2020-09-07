@@ -45,7 +45,7 @@
 # define _real_closedir             NEXT_FNC(closedir)
 # define _real_dup                  NEXT_FNC(dup)
 # define _real_dup2                 NEXT_FNC(dup2)
-# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)) && __GLIBC_PREREQ(2, 9)
+# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27))
 #  define _real_dup3                NEXT_FNC(dup3)
 # endif // if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)) &&
         // __GLIBC_PREREQ(2, 9)

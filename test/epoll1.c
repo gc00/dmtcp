@@ -12,6 +12,10 @@
 
 #include <stdio.h>
 
+#ifndef __GLIBC__
+# define __GLIBC_PREREQ(a,b) -1
+#endif
+
 #define MAX_EVENTS 10
 /* Code to set up listening socket, with 'listen_sockfd',
    (socket(), bind(), listen()) omitted */

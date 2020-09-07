@@ -27,12 +27,22 @@
 #include "uniquepid.h"
 #include "util.h"
 
-// For i386 and x86_64, SETJMP currently has bugs.  Don't turn this
-// on for them until they are debugged.
-// Default is to use  setcontext/getcontext.
-#if defined(__arm__) || defined(__aarch64__)
-#define SETJMP /* setcontext/getcontext not defined for ARM glibc */
-#endif         // if defined(__arm__) || defined(__aarch64__)
+// glibc defines this, but not musl libc.
+// Note: SIGRTMIN is defined always as __libc-current_sigrtmin().
+#ifndef __SIGRTMIN 
+# define __SIGRTMIN 32
+#endif
+
+// setcontext/getcontext is no longer POSIX, as of 2008
+// setcontext/getcontext not defined for ARM glibc
+#define SETJMP
+// It was claimed in 2014 that SETJMP had bugs.  The past advice was:
+//   Don't turn SETJMP on for them until they are debugged.
+// So, the default used was  setcontext/getcontext (as of 2020).  
+
+#ifndef SETJMP
+# define SETJMP
+#endif
 
 #ifdef SETJMP
 #include <setjmp.h>

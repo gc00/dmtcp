@@ -32,6 +32,10 @@
 #include "threadsync.h"
 #include "util.h"
 
+#ifndef __GLIBC__
+# define __GLIBC_PREREQ(a,b) -1
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13) && __GLIBC_PREREQ(2, 4)
 #include <sys/inotify.h>
 #endif  // if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13) &&

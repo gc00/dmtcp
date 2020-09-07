@@ -49,6 +49,10 @@
 #include "syscallwrappers.h"
 #include "trampolines.h"
 
+#ifndef __GLIBC__
+# define __GLIBC_PREREQ(a,b) -1
+#endif
+
 typedef int (*funcptr_t) ();
 typedef pid_t (*funcptr_pid_t) ();
 typedef funcptr_t (*signal_funcptr_t) ();

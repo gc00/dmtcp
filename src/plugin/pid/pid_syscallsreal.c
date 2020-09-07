@@ -124,6 +124,7 @@ _real_func_addr(PidVirtWrapperOffset func)
   return pid_real_func_addr[func];
 }
 
+#ifdef __GLIBC__
 LIB_PRIVATE
 void *
 _real_dlsym(void *handle, const char *symbol)
@@ -136,6 +137,7 @@ _real_dlsym(void *handle, const char *symbol)
 
   return (void *)(*_libc_dlsym_fnptr)(handle, symbol);
 }
+#endif
 
 // Also copied into src/threadlist.cpp, so that libdmtcp.sp
 //   won't depend on libdmtcp_pid.sp
@@ -295,7 +297,12 @@ _real_setuid(uid_t uid)
 
 LIB_PRIVATE
 long
+#ifdef __GLIBC__
 _real_ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data)
+#else
+// enum __ptrace_request used by glibc, but not defined in musl libc; Use: 'int'
+_real_ptrace(int request, pid_t pid, void *addr, void *data)
+#endif
 {
   REAL_FUNC_PASSTHROUGH_TYPED(long, ptrace) (request, pid, addr, data);
 }

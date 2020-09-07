@@ -1,4 +1,5 @@
 #include "ssh.h"
+#include <limits.h> // for HOST_NAME_MAX
 #include <arpa/inet.h>
 #include <limits.h> // for HOST_NAME_MAX
 #include <netinet/in.h>

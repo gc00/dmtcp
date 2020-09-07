@@ -12,12 +12,12 @@
 #include "protectedfds.h"
 #include "syscallwrappers.h" /* for _real_syscall */
 
-// For i386 and x86_64, SETJMP currently has bugs.  Don't turn this
-// on for them until they are debugged.
-// Default is to use  setcontext/getcontext.
-#if defined(__arm__) || defined(__aarch64__)
-# define SETJMP /* setcontext/getcontext not defined for ARM glibc */
-#endif // if defined(__arm__) || defined(__aarch64__)
+// setcontext/getcontext is no longer POSIX, as of 2008
+// setcontext/getcontext not defined for ARM glibc
+#define SETJMP
+// It was claimed in 2014 that SETJMP had bugs.  The past advice was:
+//   Don't turn SETJMP on for them until they are debugged.
+// So, the default used was  setcontext/getcontext (as of 2020).
 
 #ifdef SETJMP
 # include <setjmp.h>
