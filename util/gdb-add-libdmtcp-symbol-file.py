@@ -69,7 +69,7 @@ sys.exit(0)
 file = open("/proc/"+str(pid)+"/maps")
 for line in file:
   fields = line.split()[0:2]
-  fields = map(lambda(x):int(x,16), fields[0].split("-")) + [fields[1]]
+  fields = map(lambda x: int(x,16), fields[0].split("-")) + [fields[1]]
   # ACTUALLY, THIS SHOULD BE LINE AFTER text SEGMENT
   if fields[0] < pc and pc < fields[1] and fields[2] == "rw-p":
     print(int(fields[0]))
