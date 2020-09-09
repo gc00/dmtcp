@@ -71,6 +71,13 @@
 #include "jassert.h"
 #include "config.h"
 
+#ifndef __GLIBC__
+# define __GLIBC_PREREQ(a,b) -1
+# undef dmtcp_dlsym
+# undef dmtcp_dlvsym
+# undef dmtcp_dlsym_lib
+#endif
+
 // ***** NOTE:  link.h invokes elf.h, which:
 // *****        expands ElfW(Word)  to  Elf64_Word; and then defines:
 // *****        typedef uint32_t Elf63_Word;
@@ -254,16 +261,14 @@ version_name(ElfW(Word)version_ndx, dt_tag *tags)
 // and we can then read the program header to get the right segment.
 // Also, the _DYNAMIC symbol in a section should also be a pointer to
 // the address of the dynamic section.  (See comment in /usr/include/link.h)
+// FIXME:  get_dt_tags should take a link map, not a handle.
+//         This code abuses it by assuming they're the same.
+// FIXME:  The call to get_dt_tags can first call:
+//     dl_handle_to_link_map(void *handle, void *addr, struct link_map **link)
+//         This can be done using line 476, etc. (substitute for dladdr1).
 static void
-get_dt_tags(void *handle, dt_tag *tags)
+get_dt_tags(struct link_map *lmap, dt_tag *tags)
 {
-  struct link_map *lmap;  // from /usr/include/link.h
-
-  /* The handle we get here is either from an earlier call to
-   * dlopen(), or from a call to dladdr(). In both the cases,
-   * the handle corresponds to a link_map node.
-   */
-  lmap = (link_map *) handle;
   ElfW(Dyn) * dyn = lmap->l_ld;     // from /usr/include/link.h
   // http://www.sco.com/developers/gabi/latest/ch5.dynamic.html#dynamic_section
 
@@ -353,6 +358,73 @@ get_dt_tags(void *handle, dt_tag *tags)
   }
 }
 
+// Given a pseudo-handle, returns the corresponding 'struct link_map'.
+void dl_handle_to_link_map(void *handle, void *addr, struct link_map **link) {
+  Dl_info dl_info;
+  struct link_map *map;
+
+#ifdef __GLIBC__
+  // Retrieve the link_map for the library given by addr
+  int ret = dladdr1(addr, &dl_info, (void **)&map, RTLD_DL_LINKMAP);
+
+  if (!ret) {
+    JWARNING(false)(symbol)
+            .Text("dladdr1 could not find shared object for address");
+    return NULL;
+  }
+
+  // Handle RTLD_DEFAULT starts search at first loaded object
+  if (handle == RTLD_DEFAULT || libname != NULL) {
+    while (map->l_prev) {
+      // Rewinding to search by load order
+      map = map->l_prev;
+    }
+  }
+#else
+  // dladdr1 appears to be an undocumented function of glibc only.
+  // This version tries to be a little more portable; suitable for musl libc..
+  // First, we compute base_map: the link_map of the base executable.
+  // NOTE:  This must avoid calling malloc internally, to avoid
+  //        recursion when DMTCP malloc calls dlsym(RTLD_NEXT, "map")..
+  // NOTE:  The handle can be cast as a 'struct link_map', and it will have
+  //        the l_addr, l_prev, and l_next fields.  But here, we do it all
+  //        formally, using somewhat standard functions of libdl.so.
+  struct link_map *base_map;
+  void *handle_tmp = dlopen(NULL, RTLD_LAZY);
+  dlinfo(handle_tmp, RTLD_DI_LINKMAP, &base_map);
+  dlclose(handle_tmp);
+  if (handle == RTLD_DEFAULT) {
+    map = base_map;
+  } else if (handle == RTLD_NEXT) {
+    // Get link map for specified addr passed to us.
+    dladdr(addr, &dl_info);
+    // FIXME:  startup of target calls malloc, which lands here.
+    //         From the dl_info, can we find the link_map without
+    //           dlopen/malloc?  (This is what dladdr1 was doing.  How?)
+    // This is core of: dladdr1(addr, &dl_info, (void **)&map, RTLD_DL_LINKMAP)
+    for (map = base_map; map->l_next != NULL; map = map->l_next) {
+      if (dl_info.dli_fbase == (void *)map->l_addr) {
+        break;
+      }
+    }
+  } else {
+    dlinfo(handle, RTLD_DI_LINKMAP, &map);
+  }
+#endif
+
+  // Handle RTLD_NEXT starts search after current library
+  if (handle == RTLD_NEXT) {
+    // Skip current library
+    if (!map->l_next) {
+      JTRACE("There are no libraries after the current library.");
+      *link = NULL;
+    }
+    map = map->l_next;
+  }
+
+  *link = map;
+}
+
 // Given a handle for a library (not RTLD_DEFAULT or RTLD_NEXT), retrieves the
 // default symbol for the given symbol if it exists in that library.
 // Also sets the tags and default_symbol_index for usage later
@@ -360,6 +432,7 @@ void *
 dlsym_default_internal_library_handler(void *handle,
                                        const char *symbol,
                                        const char *version,
+				       void *addr,
                                        dt_tag *tags_p,
                                        Elf32_Word *default_symbol_index_p)
 {
@@ -367,8 +440,14 @@ dlsym_default_internal_library_handler(void *handle,
   Elf32_Word default_symbol_index = 0;
   Elf32_Word i;
   uint32_t numNonHiddenSymbols = 0;
+  struct link_map *lmap;
 
+  dl_handle_to_link_map(handle, addr, &lmap);
+#if 0
   get_dt_tags(handle, &tags);
+#else
+  get_dt_tags(lmap, &tags);
+#endif
   JASSERT(tags.hash != NULL || tags.gnu_hash != NULL);
   int use_gnu_hash = (tags.hash == NULL);
   Elf32_Word *hash = (use_gnu_hash ? tags.gnu_hash : tags.hash);
@@ -441,19 +520,24 @@ dlsym_default_internal_flag_handler(void *handle,
                                     dt_tag *tags_p,
                                     Elf32_Word *default_symbol_index_p)
 {
-  Dl_info info;
   struct link_map *map;
   void *result = NULL;
 
+#if 1
+  dl_handle_to_link_map(handle, addr, &map);
+#else
+
+# if 0
+  Dl_info dl_info;
+
   // Retrieve the link_map for the library given by addr
-  int ret = dladdr1(addr, &info, (void **)&map, RTLD_DL_LINKMAP);
+  int ret = dladdr1(addr, &dl_info, (void **)&map, RTLD_DL_LINKMAP);
 
   if (!ret) {
     JWARNING(false)(symbol)
             .Text("dladdr1 could not find shared object for address");
     return NULL;
   }
-
 
   // Handle RTLD_DEFAULT starts search at first loaded object
   if (handle == RTLD_DEFAULT || libname != NULL) {
@@ -462,6 +546,37 @@ dlsym_default_internal_flag_handler(void *handle,
       map = map->l_prev;
     }
   }
+# else
+  // dladdr1 appears to be an undocumented function of glibc only.
+  // This version tries to be a little more portable; suitable for musl libc..
+  // First, we compute base_map: the link_map of the base executable.
+  // NOTE:  This must avoid calling malloc internally, to avoid
+  //        recursion when DMTCP malloc calls dlsym(RTLD_NEXT, "map")..
+  // NOTE:  The handle can be cast as a 'struct link_map', and it will have
+  //        the l_addr, l_prev, and l_next fields.  But here, we do it all
+  //        formally, using somewhat standard functions of libdl.so.
+  struct link_map *base_map;
+  void *handle_tmp = dlopen(NULL, RTLD_LAZY);
+  dlinfo(handle_tmp, RTLD_DI_LINKMAP, &base_map);
+  dlclose(handle_tmp);
+  if (handle == RTLD_DEFAULT) {
+    map = base_map;
+  } else if (handle == RTLD_NEXT) {
+    // Get link map for specified addr passed to us.
+    dladdr(addr, &dl_info);
+    // FIXME:  startup of target calls malloc, which lands here.
+    //         From the dl_info, can we find the link_map without
+    //           dlopen/malloc?  (This is what dladdr1 was doing.  How?)
+    // This is core of: dladdr1(addr, &dl_info, (void **)&map, RTLD_DL_LINKMAP)
+    for (map = base_map; map->l_next != NULL; map = map->l_next) {
+      if (dl_info.dli_fbase == (void *)map->l_addr) {
+        break;
+      }
+    }
+  } else {
+    dlinfo(handle, RTLD_DI_LINKMAP, &map);
+  }
+# endif
 
   // Handle RTLD_NEXT starts search after current library
   if (handle == RTLD_NEXT) {
@@ -472,6 +587,7 @@ dlsym_default_internal_flag_handler(void *handle,
     }
     map = map->l_next;
   }
+#endif
 
   // Search through libraries until end of list is reached or symbol is found.
   while (map) {
@@ -482,9 +598,10 @@ dlsym_default_internal_flag_handler(void *handle,
     if (libname == NULL ||
         (strlen(map->l_name) > 0 && strstr(map->l_name, libname)))  {
       // Search current library
-      result = dlsym_default_internal_library_handler((void*) map,
+      result = dlsym_default_internal_library_handler((void*)map,
                                                       symbol,
                                                       version,
+						      addr,
                                                       tags_p,
                                                       default_symbol_index_p);
     }
@@ -555,10 +672,11 @@ dmtcp_dlsym(void *handle, const char *symbol)
   dt_tag tags;
   Elf32_Word default_symbol_index = 0;
 
+  // Determine where this function will return
+  void *return_address = __builtin_return_address(0);
+
 #ifdef __USE_GNU
   if (handle == RTLD_NEXT || handle == RTLD_DEFAULT) {
-    // Determine where this function will return
-    void *return_address = __builtin_return_address(0);
 
     // Search for symbol using given pseudo-handle order
     void *result = dlsym_default_internal_flag_handler(handle, NULL, symbol,
@@ -572,7 +690,8 @@ dmtcp_dlsym(void *handle, const char *symbol)
 #endif /* ifdef __USE_GNU */
 
   void *result = dlsym_default_internal_library_handler(handle, symbol,
-                                                        NULL, &tags,
+                                                        NULL,
+                                                        return_address, &tags,
                                                         &default_symbol_index);
   print_debug_messages(tags, default_symbol_index, symbol);
   dmtcp_enable_ckpt();
@@ -587,11 +706,11 @@ dmtcp_dlvsym(void *handle, char *symbol, const char *version)
 
   dt_tag tags;
   Elf32_Word default_symbol_index = 0;
+  void* return_address = __builtin_return_address(0);
 
 #ifdef __USE_GNU
   if (handle == RTLD_NEXT || handle == RTLD_DEFAULT) {
     // Determine where this function will return
-    void* return_address = __builtin_return_address(0);
     // Search for symbol using given pseudo-handle order
     void *result = dlsym_default_internal_flag_handler(handle, NULL, symbol,
                                                        version,
@@ -603,7 +722,7 @@ dmtcp_dlvsym(void *handle, char *symbol, const char *version)
 #endif
 
   void *result = dlsym_default_internal_library_handler(handle, symbol, version,
-                                                        &tags,
+                                                        return_address, &tags,
                                                         &default_symbol_index);
   dmtcp_enable_ckpt();
   return result;
