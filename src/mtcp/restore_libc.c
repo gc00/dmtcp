@@ -163,6 +163,11 @@ STATIC_TLS_TID_OFFSET()
     return offset;
   }
 
+#ifndef __GLIBC__
+  // For musl libc version 1.1
+  return 56;
+#endif
+
 #ifdef __x86_64__
   // NEEDED FOR WSL
   if (glibcMinorVersion() >= 23) {
@@ -259,13 +264,29 @@ TLSInfo_GetTidOffset(void)
      * 'struct pthread' is zeroed out before adding tid and pid.
      * pthread_desc below is defined as 'struct pthread' in glibc:nptl/descr.h
      */
+#ifndef __GLIBC__
+    // In musl libc, tid_pid will actually be tid/errno_val
+    errno = 99;
+    tid_pid.pid = errno;
+#endif
     tmp = memsubarray((char *)pthread_desc, (char *)&tid_pid, sizeof(tid_pid));
+#ifndef __GLIBC__
+    errno = 0;
+#endif
 
     if (tmp == NULL && glibcMajorVersion() == 2 && glibcMinorVersion() >= 24) {
       // starting with glibc-2.25 (including 2.24.90 on Fedora), the pid field
       // is deprecated and set to zero.
       tid_pid.pid = 0;
-      tmp = memsubarray((char *)pthread_desc, (char *)&tid_pid, sizeof(tid_pid));
+#ifndef __GLIBC__
+      // In musl libc, tid_pid.pid will actually be errno_val
+      errno = 99;
+      tid_pid.pid = errno;
+#endif
+      tmp = memsubarray((char *)pthread_desc, (char *)&tid_pid,sizeof(tid_pid));
+#ifndef __GLIBC__
+    errno = 0;
+#endif
     }
 
     if (tmp == NULL) {

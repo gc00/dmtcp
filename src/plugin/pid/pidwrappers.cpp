@@ -112,10 +112,19 @@ dmtcp_gettid()
    * cached before it is accessed by some other DMTCP code.
    */
   if (_dmtcp_thread_tid == -1) {
+#ifdef __GLIBC__
     _dmtcp_thread_tid = getpid();
+#else
+    // This returns a virtual tid in __GLIBC__.
+    _dmtcp_thread_tid = _real_gettid();
+#endif
 
     // Make sure this is the motherofall thread.
+#ifdef __GLIBC__
     JASSERT(_real_gettid() == _real_getpid()) (_real_gettid()) (_real_getpid());
+#else 
+    //JASSERT(_real_gettid() == _real_getpid()) (_real_gettid()) (_real_getpid());
+#endif
   }
   return _dmtcp_thread_tid;
 }
