@@ -208,9 +208,11 @@ extern "C" int __clone(int (*fn)(void *arg),
                        void *child_stack,
                        int flags,
                        void *arg,
-                       int *parent_tidptr,
-                       struct user_desc *newtls,
-                       int *child_tidptr);
+		       ...
+                       /* int *parent_tidptr,
+                        * struct user_desc *newtls,
+                        * int *child_tidptr
+			*/ );
 
 #define SYSCALL_VA_START() \
   va_list ap;              \

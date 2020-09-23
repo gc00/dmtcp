@@ -98,10 +98,19 @@ __clone(int (*fn)(void *arg),
         void *child_stack,
         int flags,
         void *arg,
-        int *ptid,
-        struct user_desc *tls,
-        int *ctid)
+	...
+        /* int *ptid,
+         * struct user_desc *tls,
+         * int *ctid
+	 */ )
 {
+  va_list ap;
+  va_start(ap, arg);
+  int *ptid = va_arg(ap, int*);
+  struct user_desc *tls = va_arg(ap, struct user_desc *);
+  int *ctid = va_arg(ap, int*);
+  va_end(ap);
+
   WRAPPER_EXECUTION_DISABLE_CKPT();
   ThreadSync::incrementUninitializedThreadCount();
 
