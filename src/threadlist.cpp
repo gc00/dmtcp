@@ -29,7 +29,7 @@
 
 // glibc defines this, but not musl libc.
 // Note: SIGRTMIN is defined always as __libc-current_sigrtmin().
-#ifndef __SIGRTMIN 
+#ifndef __SIGRTMIN
 # define __SIGRTMIN 32
 #endif
 

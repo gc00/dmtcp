@@ -112,10 +112,10 @@ dmtcp_gettid()
    * cached before it is accessed by some other DMTCP code.
    */
   if (_dmtcp_thread_tid == -1) {
-    _dmtcp_thread_tid = getpid();
+    _dmtcp_thread_tid = _real_gettid();
 
     // Make sure this is the motherofall thread.
-    JASSERT(_real_gettid() == _real_getpid()) (_real_gettid()) (_real_getpid());
+    //JASSERT(_real_gettid() == _real_getpid()) (_real_gettid()) (_real_getpid());
   }
   return _dmtcp_thread_tid;
 }
