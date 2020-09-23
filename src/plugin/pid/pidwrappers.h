@@ -131,6 +131,12 @@ LIB_PRIVATE pid_t dmtcp_gettid();
 LIB_PRIVATE int dmtcp_tkill(int tid, int sig);
 LIB_PRIVATE int dmtcp_tgkill(int tgid, int tid, int sig);
 
+#ifndef __GLIBC__
+  // GLIBC defines weak symbol clone and strong symbol __clone
+  // In musl libc, only clone is defined.
+# define __clone clone
+#endif
+
 #define FOREACH_PIDVIRT_WRAPPER(MACRO) \
   MACRO(fork)                          \
   MACRO(vfork)                         \

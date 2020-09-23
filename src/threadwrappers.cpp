@@ -19,6 +19,7 @@
  *  <http://www.gnu.org/licenses/>.                                         *
  ****************************************************************************/
 
+#include <stdarg.h>
 #include <sys/syscall.h>
 #include "../jalib/jalloc.h"
 #include "../jalib/jassert.h"
@@ -98,10 +99,21 @@ __clone(int (*fn)(void *arg),
         void *child_stack,
         int flags,
         void *arg,
-        int *ptid,
-        struct user_desc *tls,
-        int *ctid)
+	...
+        /* int *ptid,
+         * struct user_desc *tls,
+         * int *ctid
+	 */ )
 {
+#ifndef __GLIBC__
+  va_list ap;
+  va_start(ap, arg);
+  int *ptid = va_arg(ap, int*);
+  struct user_desc *tls = va_arg(ap, struct user_desc *);
+  int *ctid = va_arg(ap, int*);
+  va_end(ap);
+#endif
+
   WRAPPER_EXECUTION_DISABLE_CKPT();
   ThreadSync::incrementUninitializedThreadCount();
 
@@ -143,6 +155,16 @@ asm (".global clone ; .type clone,%function ; clone = __clone");
 static void *
 pthread_start(void *arg)
 {
+#ifndef __GLIBC__
+  // In GLIBC, pthread_create->libc:clone->clone_start->pthread_start.
+  // But in musl libc, pthread_create directly calls clone, and we
+  //   can't interpose.  So:  pthread_create->libc:clone->pthread_start.
+  // So, we copy this thread update from clone_start to pthread_start.
+  Thread *thread = (Thread *)arg;
+  ThreadSync::initThread();
+  ThreadList::updateTid(thread);
+#endif
+
   struct ThreadArg *threadArg = (struct ThreadArg *)arg;
   void *thread_arg = threadArg->arg;
   void *(*pthread_fn) (void *) = threadArg->pthread_fn;

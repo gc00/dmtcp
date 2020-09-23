@@ -133,6 +133,12 @@ LIB_PRIVATE extern __thread int thread_performing_dlopen_dlsym;
 # define openat64 openat64_unused
 #endif
 
+#ifndef __GLIBC__
+// GLIBC defines weak symbol clone and strong symbol __clone
+// In musl libc, only clone is defined.
+# define __clone clone
+#endif
+
 #define FOREACH_DMTCP_WRAPPER(MACRO)  \
   MACRO(dlopen)                       \
   MACRO(dlclose)                      \

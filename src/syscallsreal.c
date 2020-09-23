@@ -925,6 +925,12 @@ _real___lxstat64(int vers, const char *path, struct stat64 *buf)
   REAL_FUNC_PASSTHROUGH(__lxstat64) (vers, path, buf);
 }
 
+#ifndef __GLIBC__
+// GLIBC defines weak symbol clone and strong symbol __clone
+// In musl libc, only clone is defined.
+# define __clone clone
+#endif
+
 LIB_PRIVATE
 int
 _real_clone(int (*function)(
