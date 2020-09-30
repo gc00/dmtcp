@@ -66,11 +66,12 @@ struct Thread {
 
   char procname[17];
 
-  int (*fn)(void *);
-  void *arg;
+  // 'fn' is the start function type for clone(), not pthread_create()
+  int (*fn)(void *); // not used by DMTCP (for debugging)
+  void *arg; // not used by DMTCP (for debugging)
   int flags;
-  pid_t *ptid;
-  pid_t *ctid;
+  pid_t *ptid; // not used by DMTCP (for debugging)
+  pid_t *ctid; // not used by DMTCP (for debugging)
 
   pid_t virtual_tid;
   sigset_t sigblockmask; // blocked signals
