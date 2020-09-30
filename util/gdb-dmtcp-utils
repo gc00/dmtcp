@@ -362,7 +362,7 @@ def memory_region(filename_substring):
 
 def memory_region_at_address(memory_address):
   if "0x" in hex(int(str(gdb.parse_and_eval(memory_address)))): 
-    memory_address = str(gdb.parse_and_eval(memory_address))
+    memory_address = hex(int(str(gdb.parse_and_eval(memory_address))))
     memory_address = "0x" + memory_address.split("0x")[1]
     memory_address = memory_address.split(" ")[0]
   elif "0x" not in str(memory_address) and \
