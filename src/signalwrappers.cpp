@@ -29,7 +29,7 @@
 #include "syscallwrappers.h"
 
 #ifndef __GLIBC__
-# define __GLIBC_PREREQ(a,b) -1
+# define __GLIBC_PREREQ(a,b) -1 /* Will accept any GLIBC_PREREQ */
 #endif
 
 #ifndef EXTERNC
@@ -62,7 +62,7 @@ bannedSignalNumber()
   return stopSignal;
 }
 
-#if defined(__GLIBC_PREREQ) && (__GLIBC_PREREQ(0,0) != -1)
+#ifdef __GLIBC__
 // *** If GLIBC and not alternative libc;  These are BSD fnc's, not POSIX.
 static int
 patchBSDMask(int mask)
@@ -176,7 +176,7 @@ rt_sigaction(int signum, const struct sigaction *act, struct sigaction *oldact)
   // return _real_rt_sigaction( signum, act, oldact);
 }
 
-#if !__GLIBC_PREREQ(2, 21)
+#if defined(__GLIBC__) && !__GLIBC_PREREQ(2, 21)
 EXTERNC int
 sigvec(int signum, const struct sigvec *vec, struct sigvec *ovec)
 {
@@ -187,7 +187,7 @@ sigvec(int signum, const struct sigvec *vec, struct sigvec *ovec)
 }
 #endif // if !__GLIBC_PREREQ(2, 21)
 
-#if defined(__GLIBC_PREREQ) && (__GLIBC_PREREQ(0,0) != -1)
+#ifdef __GLIBC__
 // *** If GLIBC and not alternative libc;  These are BSD fnc's, not POSIX.
 // set the mask
 EXTERNC int

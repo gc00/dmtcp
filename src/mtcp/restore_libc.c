@@ -23,7 +23,7 @@
 #include <pthread.h> // for pthread_self(), needed for WSL
 #include <elf.h>
 #include <errno.h>
-#ifdef __GLIBC_PREREQ
+#ifdef __GLIBC__
 # include <gnu/libc-version.h>
 #endif
 #include <linux/version.h>
@@ -111,7 +111,7 @@ static int glibcMinorVersion()
  *       to accommodate this.                                    -- KAPIL
  */
 
-#if !__GLIBC_PREREQ(2, 1)
+#if defined(__GLIBC__) && !__GLIBC_PREREQ(2, 1)
 # error "glibc version too old"
 #endif /* if !__GLIBC_PREREQ(2, 1) */
 

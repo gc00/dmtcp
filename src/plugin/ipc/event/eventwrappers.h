@@ -29,10 +29,11 @@
 # include "dmtcp.h"
 
 # ifndef __GLIBC__
-#  define __GLIBC_PREREQ(a,b) -1
+#  define __GLIBC_PREREQ(a,b) -1 /* Will accept any GLIBC_PREREQ */
 # endif
 
-# if __GLIBC_PREREQ(2, 21)
+# if __GLIBC_PREREQ(2, 21) || !defined(__GLIBC__)
+#  // musl libc uses 'unsigned int' for first argument
 #  define EVENTFD_VAL_TYPE    unsigned int
 # else // if __GLIBC_PREREQ(2, 21)
 #  define EVENTFD_VAL_TYPE    int
