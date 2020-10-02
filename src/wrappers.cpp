@@ -43,7 +43,14 @@ static bool
 isValidAddress(const char *path)
 {
   struct stat buf;
+#ifdef __GLIBC__
+  // For GLIBC, compiling with -O2 expands stat to __xstat.
+  // FIXME:  We should call _real_stat() which is still defined in GLIBC.
   int retval = _real___xstat(0, path, &buf);
+#else
+  // musl libc, etc.
+  int retval = _real_stat(path, &buf);
+#endif
   if (retval == -1 && errno == EFAULT) {
     return false;
   }
@@ -595,6 +602,23 @@ extern "C" DIR * opendir(const char *name)
 //
 
 extern "C" int
+stat(const char *path, struct stat *buf)
+{
+  WrapperLock wrapperLock;
+
+  char realPath[PATH_MAX] = {0};
+#ifdef __GLIBC__
+  // In __GLIBC__ and GNU toolchain, a call to stat() goes to __xstat@plt()
+  // The argument vers (1) is for x86_64.
+  return _real___xstat(1, virtualToRealPath(path, realPath), buf);
+#else
+  return _real_stat(virtualToRealPath(path, realPath), buf);
+#endif
+}
+
+#ifdef __GLIBC__
+// These are glibc-internal functions, only.
+extern "C" int
 __xstat(int vers, const char *path, struct stat *buf)
 {
   WrapperLock wrapperLock;
@@ -629,6 +653,7 @@ __lxstat64(int vers, const char *path, struct stat64 *buf)
   char realPath[PATH_MAX] = {0};
   return _real___lxstat64(vers, virtualToRealPath(path, realPath), buf);
 }
+#endif
 
 static ssize_t
 readlink_work(const char *path, char *buf, size_t bufsiz)
