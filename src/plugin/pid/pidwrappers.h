@@ -131,16 +131,19 @@ LIB_PRIVATE pid_t dmtcp_gettid();
 LIB_PRIVATE int dmtcp_tkill(int tid, int sig);
 LIB_PRIVATE int dmtcp_tgkill(int tgid, int tid, int sig);
 
-#ifndef __GLIBC__
-  // GLIBC defines weak symbol clone and strong symbol __clone
-  // In musl libc, only clone is defined.
-# define __clone clone
+#ifdef __GLIBC__
+# define GLIBC_MACRO(MACRO,name) MACRO(name)
+#else
+// See syscallwrappers.h for explanation o why this is needed.
+// Deflect BSD or GLIBC-internal function to expand to nothing
+# define GLIBC_MACRO(MACRO,name)
 #endif
 
 #define FOREACH_PIDVIRT_WRAPPER(MACRO) \
   MACRO(fork)                          \
   MACRO(vfork)                         \
-  MACRO(__clone)                       \
+  MACRO(clone)                         \
+  GLIBC_MACRO(MACRO,__clone)           \
   MACRO(gettid)                        \
   MACRO(tkill)                         \
   MACRO(tgkill)                        \
@@ -178,10 +181,11 @@ LIB_PRIVATE int dmtcp_tgkill(int tgid, int tid, int sig);
   MACRO(close)                         \
   MACRO(dup2)                          \
   MACRO(opendir)                       \
-  MACRO(__xstat)                       \
-  MACRO(__xstat64)                     \
-  MACRO(__lxstat)                      \
-  MACRO(__lxstat64)                    \
+  MACRO(stat)                          \
+  GLIBC_MACRO(MACRO,__xstat)           \
+  GLIBC_MACRO(MACRO,__xstat64)         \
+  GLIBC_MACRO(MACRO,__lxstat)          \
+  GLIBC_MACRO(MACRO,__lxstat64)        \
   MACRO(readlink)
 
 #define FOREACH_SYSVIPC_CTL_WRAPPER(MACRO) \
@@ -312,10 +316,12 @@ FILE *_real_fopen(const char *path, const char *mode);
 FILE *_real_fopen64(const char *path, const char *mode);
 int _real_fclose(FILE *fp);
 DIR *_real_opendir(const char *name);
+#ifdef __GLIBC__
 int _real_xstat(int vers, const char *path, struct stat *buf);
 int _real_xstat64(int vers, const char *path, struct stat64 *buf);
 int _real_lxstat(int vers, const char *path, struct stat *buf);
 int _real_lxstat64(int vers, const char *path, struct stat64 *buf);
+#endif
 ssize_t _real_readlink(const char *path, char *buf, size_t bufsiz);
 #ifdef HAS_CMA
 ssize_t _real_process_vm_readv(pid_t pid,

@@ -545,6 +545,8 @@ _real_opendir(const char* name)
   REAL_FUNC_PASSTHROUGH_TYPED(DIR*, opendir) (name);
 }
 
+#ifdef __GLIBC__
+// libc musl and other libc's don't implement these glibc-internal functions.
 int
 _real_xstat(int vers, const char *path, struct stat *buf)
 {
@@ -568,6 +570,7 @@ _real_lxstat64(int vers, const char *path, struct stat64 *buf)
 {
   REAL_FUNC_PASSTHROUGH(__lxstat64) (vers, path, buf);
 }
+#endif
 
 ssize_t
 _real_readlink(const char *path, char *buf, size_t bufsiz)

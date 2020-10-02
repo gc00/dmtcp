@@ -25,6 +25,7 @@
 
 #include "dmtcp.h"
 
+# define _real_stat         NEXT_FNC(stat)
 # define _real_xstat        NEXT_FNC(__xstat)
 # define _real_xstat64      NEXT_FNC(__xstat64)
 # define _real_lxstat       NEXT_FNC(__lxstat)
