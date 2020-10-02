@@ -19,6 +19,7 @@
  *  <http://www.gnu.org/licenses/>.                                         *
  ****************************************************************************/
 
+#include <stdarg.h>
 #include <sys/syscall.h>
 #include "../jalib/jalloc.h"
 #include "../jalib/jassert.h"
@@ -98,11 +99,11 @@ __clone(int (*fn)(void *arg),
         void *child_stack,
         int flags,
         void *arg,
-	...
+        ...
         /* int *ptid,
          * struct user_desc *tls,
          * int *ctid
-	 */ )
+         */ )
 {
   va_list ap;
   va_start(ap, arg);
@@ -115,6 +116,7 @@ __clone(int (*fn)(void *arg),
   ThreadSync::incrementUninitializedThreadCount();
 
   Thread *thread = ThreadList::getNewThread();
+  // Initialize 'thread' with other args of 'initThread'.
   ThreadList::initThread(thread, fn, arg, flags, ptid, ctid);
 
   // if (ckpthread == NULL) {
@@ -160,6 +162,33 @@ pthread_start(void *arg)
   JASSERT(pthread_fn != 0x0);
   JALLOC_HELPER_FREE(arg); // Was allocated in calling thread in pthread_create
 
+#ifndef __GLIBC__
+  // In GLIBC, pthread_create->libc:clone->clone_start->pthread_start.
+  // But in musl libc, pthread_create directly calls clone, and we
+  //   can't interpose.  So:  pthread_create->libc:clone->pthread_start.
+  // So, we copy this thread update from clone_start to pthread_start.
+  ThreadSync::initThread();
+  unsigned flags = CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND
+                   | CLONE_THREAD | CLONE_SYSVSEM | CLONE_SETTLS
+                   | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID
+                   | CLONE_DETACHED;
+  // FIXME:  We need to dynamically allocate thread
+  Thread *thread = (Thread *)JALLOC_HELPER_MALLOC(sizeof(*thread));
+  // Initialize 'thread' with other args of 'initThread'.
+  // ThreadList::updateTid() will set thread->tid
+  // pthread_fn must be converted from pthread_create() type to clone() type
+  ThreadList::initThread(thread, (int (*)(void *))pthread_fn, thread_arg, flags,
+                         NULL /* ptid */, NULL /* ctid */);
+  ThreadList::updateTid(thread);
+
+  // In musl libc, there was no 'clone_start' and we're being passed
+  // the 'arg' that would have been seen by 'clone_start'.  Let's
+  // pull out the 'arg' intended for 'pthread_start'.
+  //// struct ThreadArg *arg_clone = (struct ThreadArg *)arg;
+  //// arg = (void *)(arg_clone->arg);
+#endif
+
+
   // Unblock ckpt signal (unblocking a non-blocked signal has no effect).
   // Normally, DMTCP wouldn't allow the ckpt signal to be blocked. However, in
   // some situations (e.g., timer_create), libc would internally block all
@@ -173,6 +202,9 @@ pthread_start(void *arg)
   ThreadSync::threadFinishedInitialization();
   void *result = (*pthread_fn)(thread_arg);
   JTRACE("Thread returned") (virtualTid);
+#ifndef __GLIBC__
+  ThreadSync::decrementUninitializedThreadCount();
+#endif
   WRAPPER_EXECUTION_DISABLE_CKPT();
   ThreadList::threadExit();
 
