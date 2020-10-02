@@ -40,7 +40,7 @@
 #include <sys/wait.h>
 
 #ifndef __GLIBC__
-# define __GLIBC_PREREQ(a,b) -1
+# define __GLIBC_PREREQ(a,b) -1 /* Will accept any GLIBC_PREREQ */
 #endif
 
 // FIXME:  The SLES 10 (glibc-2.4) declaration for msgctl differs from
@@ -381,7 +381,7 @@ int _real_sigaction(int signum,
 int _real_rt_sigaction(int signum,
                        const struct sigaction *act,
                        struct sigaction *oldact);
-#if !__GLIBC_PREREQ(2, 21)
+#if defined(__GLIBC__) && !__GLIBC_PREREQ(2, 21)
 int _real_sigvec(int sig, const struct sigvec *vec, struct sigvec *ovec);
 #endif // if !__GLIBC_PREREQ(2, 21)
 

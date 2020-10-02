@@ -33,7 +33,7 @@
 #include "util.h"
 
 #ifndef __GLIBC__
-# define __GLIBC_PREREQ(a,b) -1
+# define __GLIBC_PREREQ(a,b) -1 /* Will accept any GLIBC_PREREQ */
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13) && __GLIBC_PREREQ(2, 4)
