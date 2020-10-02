@@ -72,7 +72,7 @@
 #include "config.h"
 
 #ifndef __GLIBC__
-# define __GLIBC_PREREQ(a,b) -1
+# define __GLIBC_PREREQ(a,b) -1 /* Will accept any GLIBC_PREREQ */
 # undef dmtcp_dlsym
 # undef dmtcp_dlvsym
 # undef dmtcp_dlsym_lib

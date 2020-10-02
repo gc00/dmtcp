@@ -50,7 +50,7 @@
 #include "trampolines.h"
 
 #ifndef __GLIBC__
-# define __GLIBC_PREREQ(a,b) -1
+# define __GLIBC_PREREQ(a,b) -1 /* Will accept any GLIBC_PREREQ */
 #endif
 
 typedef int (*funcptr_t) ();
@@ -642,7 +642,7 @@ _real_sigaction(int signum,
   REAL_FUNC_PASSTHROUGH(sigaction) (signum, act, oldact);
 }
 
-#if !__GLIBC_PREREQ(2, 21)
+#if defined(__GLIBC__) && !__GLIBC_PREREQ(2, 21)
 LIB_PRIVATE
 int
 _real_sigvec(int signum, const struct sigvec *vec, struct sigvec *ovec)
