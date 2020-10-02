@@ -276,7 +276,19 @@ LIB_PRIVATE extern __thread int thread_performing_dlopen_dlsym;
   MACRO(pthread_sigmask)              \
   MACRO(pthread_getspecific)
 
-#define ENUM(x)     enum_ ## x
+#ifdef __GLIBC__
+# define ENUM(x)     enum_ ## x
+#else
+// sigvec is BSD, but not POSIX; So, it's not defined in musl libc.
+// During DMTCP initialize, it will call dmtcp_dlsym(RTLD_NEXT, "sigvec").
+// This will generate code for dl_error(), which requires malloc().
+// But in DMTCP, malloc() cannot be used at this early stage of initialization,
+//   since it is a wrapper to an uninitialized alloc plugin.
+// Using --disable-alloc-plugin would fix this, but we wish to avoid this.
+// DMTCP does not wrap abort.  So, dlsym() should work on 'abort'.
+# define ENUM(x) (strcmp(#x,"sigvec") == 0 ? "enum_abort" : "enum_" #x)
+#endif
+
 #define GEN_ENUM(x) ENUM(x),
 typedef enum {
   FOREACH_DMTCP_WRAPPER(GEN_ENUM)
