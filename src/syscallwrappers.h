@@ -133,6 +133,32 @@ LIB_PRIVATE extern __thread int thread_performing_dlopen_dlsym;
 # define openat64 openat64_unused
 #endif
 
+#ifndef __GLIBC__
+// GLIBC defines weak symbol clone and strong symbol __clone
+// In musl libc, only clone is defined.
+# define __clone clone
+#endif
+
+// sigvec, sigblock, etc. are BSD or glibc-internal, but not POSIX;
+// So, it's not defined in musl libc.
+// During DMTCP initialize, it will call dmtcp_dlsym(RTLD_NEXT, "sigvec").
+// This will generate code for dl_error(), which requires malloc().
+// But in DMTCP, malloc() cannot be used at this early stage of initialization,
+//   since it is a wrapper to an uninitialized alloc plugin.
+// Using --disable-alloc-plugin would fix this, but we wish to avoid this.
+// DMTCP does not wrap abort.  So, dlsym() should work on 'abort'.  And so on.
+// FIXME:  This happens because DMTCP prematurely uses its alloc plugin
+//         before it is initialized.  This happens because of the opposite
+//         danger of using the user's own GLIBC malloc for DMTCP's
+//         internal use.  We need a third option -- maybe to use a
+//         simplistic malloc() until the DMTCP alloc plugin is initialized???
+#ifdef __GLIBC__
+# define GLIBC_MACRO(MACRO,name) MACRO(name)
+#else
+// Deflect BSD or GLIBC-internal function to expand to nothing
+# define GLIBC_MACRO(MACRO,name)
+#endif
+
 #define FOREACH_DMTCP_WRAPPER(MACRO)  \
   MACRO(dlopen)                       \
   MACRO(dlclose)                      \
@@ -184,18 +210,18 @@ LIB_PRIVATE extern __thread int thread_performing_dlopen_dlsym;
                                       \
   MACRO(signal)                       \
   MACRO(sigaction)                    \
-  MACRO(sigvec)                       \
+  GLIBC_MACRO(MACRO,sigvec)           \
                                       \
   MACRO(sigset)                       \
-  MACRO(sigblock)                     \
-  MACRO(sigsetmask)                   \
-  MACRO(siggetmask)                   \
+  GLIBC_MACRO(MACRO,sigblock)         \
+  GLIBC_MACRO(MACRO,sigsetmask)       \
+  GLIBC_MACRO(MACRO,siggetmask)       \
   MACRO(sigprocmask)                  \
                                       \
   MACRO(sigsuspend)                   \
   MACRO(sighold)                      \
   MACRO(sigignore)                    \
-  MACRO(__sigpause)                   \
+  GLIBC_MACRO(MACRO,__sigpause)       \
   MACRO(sigpause)                     \
   MACRO(sigrelse)                     \
                                       \
@@ -205,7 +231,8 @@ LIB_PRIVATE extern __thread int thread_performing_dlopen_dlsym;
                                       \
   MACRO(fork)                         \
   MACRO(vfork)                        \
-  MACRO(__clone)                      \
+  MACRO(clone)                        \
+  GLIBC_MACRO(MACRO,__clone)          \
   MACRO(open)                         \
   MACRO(open64)                       \
   MACRO(fopen)                        \
@@ -225,10 +252,11 @@ LIB_PRIVATE extern __thread int thread_performing_dlopen_dlsym;
   MACRO(dup)                          \
   MACRO(dup2)                         \
   MACRO(dup3)                         \
-  MACRO(__xstat)                      \
-  MACRO(__xstat64)                    \
-  MACRO(__lxstat)                     \
-  MACRO(__lxstat64)                   \
+  MACRO(stat)                         \
+  GLIBC_MACRO(MACRO,__xstat)          \
+  GLIBC_MACRO(MACRO,__xstat64)        \
+  GLIBC_MACRO(MACRO,__lxstat)         \
+  GLIBC_MACRO(MACRO,__lxstat64)       \
   MACRO(readlink)                     \
   MACRO(realpath)                     \
   MACRO(access)                       \
@@ -237,7 +265,7 @@ LIB_PRIVATE extern __thread int thread_performing_dlopen_dlsym;
   MACRO(unsetenv)                     \
   MACRO(ptsname_r)                    \
   MACRO(ttyname_r)                    \
-  MACRO(getpt)                        \
+  GLIBC_MACRO(MACRO,getpt)            \
   MACRO(posix_openpt)                 \
   MACRO(openlog)                      \
   MACRO(closelog)                     \
@@ -271,6 +299,7 @@ LIB_PRIVATE extern __thread int thread_performing_dlopen_dlsym;
   MACRO(pthread_getspecific)
 
 #define ENUM(x)     enum_ ## x
+
 #define GEN_ENUM(x) ENUM(x),
 typedef enum {
   FOREACH_DMTCP_WRAPPER(GEN_ENUM)
@@ -386,9 +415,11 @@ int _real_sigvec(int sig, const struct sigvec *vec, struct sigvec *ovec);
 #endif // if !__GLIBC_PREREQ(2, 21)
 
 // set the mask
+#ifdef __GLIBC__
 int _real_sigblock(int mask);
 int _real_sigsetmask(int mask);
 int _real_siggetmask(void);
+#endif
 int _real_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
 int _real_rt_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
 int _real_pthread_sigmask(int how, const sigset_t *newmask, sigset_t *oldmask);
@@ -420,6 +451,7 @@ int _real_pthread_timedjoin_np(pthread_t thread,
                                void **retval,
                                const struct timespec *abstime);
 
+int _real_stat(const char *path, struct stat *buf);
 int _real___xstat(int vers, const char *path, struct stat *buf);
 int _real___xstat64(int vers, const char *path, struct stat64 *buf);
 int _real___lxstat(int vers, const char *path, struct stat *buf);

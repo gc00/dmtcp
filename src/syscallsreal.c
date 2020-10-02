@@ -555,12 +555,15 @@ _real_mkostemps(char *ttemplate, int suffixlen, int flags)
   REAL_FUNC_PASSTHROUGH(mkostemps)(ttemplate, suffixlen, flags);
 }
 
+#ifdef __GLIBC__
+// For non-glibc, avoid non-POSIX functions.
 LIB_PRIVATE
 int
 _real_getpt(void)
 {
   REAL_FUNC_PASSTHROUGH(getpt) ();
 }
+#endif
 
 LIB_PRIVATE
 int
@@ -651,6 +654,7 @@ _real_sigvec(int signum, const struct sigvec *vec, struct sigvec *ovec)
 }
 #endif /* if !__GLIBC_PREREQ(2, 21) */
 
+#ifdef __GLIBC__
 // set the mask
 LIB_PRIVATE
 int
@@ -672,6 +676,7 @@ _real_siggetmask(void)
 {
   REAL_FUNC_PASSTHROUGH(siggetmask)();
 }
+#endif
 
 LIB_PRIVATE
 int
@@ -722,6 +727,8 @@ _real_sigignore(int sig)
   REAL_FUNC_PASSTHROUGH(sigignore) (sig);
 }
 
+#ifdef __GLIBC__
+// For non-glibc, avoid glibc-internal functions.
 // See 'man sigpause':  signal.h defines two possible versions for sigpause.
 LIB_PRIVATE
 int
@@ -729,6 +736,7 @@ _real__sigpause(int __sig_or_mask, int __is_sig)
 {
   REAL_FUNC_PASSTHROUGH(__sigpause) (__sig_or_mask, __is_sig);
 }
+#endif
 
 LIB_PRIVATE
 int
@@ -899,6 +907,15 @@ _real_syscall(long sys_num, ...)
 
 LIB_PRIVATE
 int
+_real_stat(const char *path, struct stat *buf)
+{
+  REAL_FUNC_PASSTHROUGH(stat) (path, buf);
+}
+
+#ifdef __GLIBC__
+// For non-glibc, avoid glibc-internal functions.
+LIB_PRIVATE
+int
 _real___xstat(int vers, const char *path, struct stat *buf)
 {
   REAL_FUNC_PASSTHROUGH(__xstat) (vers, path, buf);
@@ -924,6 +941,13 @@ _real___lxstat64(int vers, const char *path, struct stat64 *buf)
 {
   REAL_FUNC_PASSTHROUGH(__lxstat64) (vers, path, buf);
 }
+#endif
+
+#ifndef __GLIBC__
+// GLIBC defines weak symbol clone and strong symbol __clone
+// In musl libc, only clone is defined.
+# define __clone clone
+#endif
 
 LIB_PRIVATE
 int

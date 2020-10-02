@@ -199,6 +199,11 @@ waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
 }
 #endif // if 1
 
+#ifndef __GLIBC__
+// In musl libc, only clone is defined.
+# define __clone clone
+#endif
+
 extern "C" int __clone(int (*fn)(void *arg),
                        void *child_stack,
                        int flags,
