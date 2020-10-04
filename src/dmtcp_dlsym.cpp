@@ -264,11 +264,23 @@ version_name(ElfW(Word)version_ndx, dt_tag *tags)
 // FIXME:  get_dt_tags should take a link map, not a handle.
 //         This code abuses it by assuming they're the same.
 // FIXME:  The call to get_dt_tags can first call:
-//     dl_handle_to_link_map(void *handle, void *addr, struct link_map **link)
+//     dl_handle_to_link_map(void *handle, void *addr, struct link_map **link,
+//                           char *libname, char *symbol)
 //         This can be done using line 476, etc. (substitute for dladdr1).
 static void
-get_dt_tags(struct link_map *lmap, dt_tag *tags)
+get_dt_tags(void *handle, struct link_map *lmap, dt_tag *tags)
 {
+#if 1
+  // OLD VERSION:
+  /* The handle we get here is either from an earlier call to
+   * dlopen(), or from a call to dladdr(). In both the cases,
+   * the handle corresponds to a link_map node.
+   */
+  lmap = (link_map *) handle;
+#else
+  // Can we use original arg, lmap, and guarantee that it's same as handle?
+#endif
+
   ElfW(Dyn) * dyn = lmap->l_ld;     // from /usr/include/link.h
   // http://www.sco.com/developers/gabi/latest/ch5.dynamic.html#dynamic_section
 
@@ -359,7 +371,9 @@ get_dt_tags(struct link_map *lmap, dt_tag *tags)
 }
 
 // Given a pseudo-handle, returns the corresponding 'struct link_map'.
-void dl_handle_to_link_map(void *handle, void *addr, struct link_map **link) {
+// The libname and symbol are for debugging, only.
+void dl_handle_to_link_map(void *handle, void *addr, struct link_map **link,
+                           const char *libname, const char *symbol) {
   Dl_info dl_info;
   struct link_map *map;
 
@@ -370,7 +384,7 @@ void dl_handle_to_link_map(void *handle, void *addr, struct link_map **link) {
   if (!ret) {
     JWARNING(false)(symbol)
             .Text("dladdr1 could not find shared object for address");
-    return NULL;
+    return;
   }
 
   // Handle RTLD_DEFAULT starts search at first loaded object
@@ -432,7 +446,7 @@ void *
 dlsym_default_internal_library_handler(void *handle,
                                        const char *symbol,
                                        const char *version,
-				       void *addr,
+                                       void *addr,
                                        dt_tag *tags_p,
                                        Elf32_Word *default_symbol_index_p)
 {
@@ -442,12 +456,8 @@ dlsym_default_internal_library_handler(void *handle,
   uint32_t numNonHiddenSymbols = 0;
   struct link_map *lmap;
 
-  dl_handle_to_link_map(handle, addr, &lmap);
-#if 0
-  get_dt_tags(handle, &tags);
-#else
-  get_dt_tags(lmap, &tags);
-#endif
+  dl_handle_to_link_map(handle, addr, &lmap, NULL, symbol);
+  get_dt_tags(handle, lmap, &tags);
   JASSERT(tags.hash != NULL || tags.gnu_hash != NULL);
   int use_gnu_hash = (tags.hash == NULL);
   Elf32_Word *hash = (use_gnu_hash ? tags.gnu_hash : tags.hash);
@@ -524,7 +534,7 @@ dlsym_default_internal_flag_handler(void *handle,
   void *result = NULL;
 
 #if 1
-  dl_handle_to_link_map(handle, addr, &map);
+  dl_handle_to_link_map(handle, addr, &map, libname, symbol);
 #else
 
 # if 0
@@ -601,7 +611,7 @@ dlsym_default_internal_flag_handler(void *handle,
       result = dlsym_default_internal_library_handler((void*)map,
                                                       symbol,
                                                       version,
-						      addr,
+                                                      addr,
                                                       tags_p,
                                                       default_symbol_index_p);
     }
@@ -677,7 +687,6 @@ dmtcp_dlsym(void *handle, const char *symbol)
 
 #ifdef __USE_GNU
   if (handle == RTLD_NEXT || handle == RTLD_DEFAULT) {
-
     // Search for symbol using given pseudo-handle order
     void *result = dlsym_default_internal_flag_handler(handle, NULL, symbol,
                                                        NULL,
