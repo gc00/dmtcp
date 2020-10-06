@@ -783,23 +783,27 @@ runTest("stat",         1, ["./test/stat"])
 runTest("presuspend",   [1, 2], ["./test/presuspend"])
 
 PWD=os.getcwd()
-runTest("plugin-sleep2", 1, ["--with-plugin "+
-                             PWD+"/test/plugin/sleep1/dmtcp_sleep1hijack.so:"+
-                             PWD+"/test/plugin/sleep2/dmtcp_sleep2hijack.so "+
-                             "./test/dmtcp1"])
+runTest("plugin-sleep2",  1, ["--with-plugin "+
+                              PWD+"/test/plugin/sleep1/dmtcp_sleep1hijack.so:"+
+                              PWD+"/test/plugin/sleep2/dmtcp_sleep2hijack.so "+
+                              "./test/dmtcp1"])
 
 runTest("plugin-example-db", 2, ["--with-plugin "+
-                            PWD+"/test/plugin/example-db/dmtcp_example-dbhijack.so "+
-                             "env EXAMPLE_DB_KEY=1 EXAMPLE_DB_KEY_OTHER=2 "+
-                             "./test/dmtcp1",
-                                 "--with-plugin "+
-                            PWD+"/test/plugin/example-db/dmtcp_example-dbhijack.so "+
-                             "env EXAMPLE_DB_KEY=2 EXAMPLE_DB_KEY_OTHER=1 "+
-                             "./test/dmtcp1"])
+                      PWD+"/test/plugin/example-db/dmtcp_example-dbhijack.so "+
+                       "env EXAMPLE_DB_KEY=1 EXAMPLE_DB_KEY_OTHER=2 "+
+                       "./test/dmtcp1",
+                           "--with-plugin "+
+                      PWD+"/test/plugin/example-db/dmtcp_example-dbhijack.so "+
+                       "env EXAMPLE_DB_KEY=2 EXAMPLE_DB_KEY_OTHER=1 "+
+                       "./test/dmtcp1"])
 
-runTest("plugin-init", 1, ["--with-plugin "+
-                             PWD+"/test/libdmtcp_plugin-init.so "+
-                             "./test/dmtcp1"])
+runTest("plugin-init",    1, ["--with-plugin "+
+                              PWD+"/test/libdmtcp_plugin-init.so "+
+                              "./test/dmtcp1"])
+
+runTest("plugin-presuspend", 1, ["--with-plugin "+
+                                 PWD+"/test/libdmtcp_plugin-presuspend.so "+
+                                 "./test/presuspend"])
 
 # Test special case:  gettimeofday can be handled within VDSO segment.
 runTest("gettimeofday",   1, ["./test/gettimeofday"])

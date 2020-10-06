@@ -109,6 +109,12 @@ libdmtcp_plugin-init.so: plugin-init.cpp
 plugin-init: libdmtcp_plugin-init.so
 	# Don't create executable.  Only the library, above, used on test/sleep1
 
+# plugin-prepsuspend will call the PRESUSPEND event in libdmtcp_presuspend-init.so
+libdmtcp_plugin-presuspend.so: plugin-presuspend.c
+	${CC} ${CFLAGS} -shared -fPIC -o $@ $<
+plugin-presuspend: libdmtcp_plugin-presuspend.so
+	# Don't create executable.  Only the library, above, used on test/sleep1
+
 readline: readline.c
 ifeq ($(HAS_READLINE),yes)
 	$(CC) -o $@ $< $(CFLAGS) $(READLINE_LIBS)

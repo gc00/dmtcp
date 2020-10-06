@@ -15,79 +15,19 @@
 #define NUM_THREADS 10
 #define GETTID() syscall(SYS_gettid)
 
+// Inform the presuspend plugin.
+void setChildPidPtr(pid_t *masterChildPidPtr) __attribute((weak));
+#define setChildPidPtr(arg) (setChildPidPtr ? setChildPidPtr(arg) : 0)
+int in_presuspend = 0;
 pid_t childPid = 0;
-
-void presuspend1()
-{
-  if (childPid) {
-    printf("Parent: Presuspend1: sending SIGINT to child\n");
-    kill(childPid, SIGINT);
-    assert(waitpid(childPid, NULL, 0) == childPid);
-  } else {
-    printf("Child: Presuspend1\n");
-  }
-  fflush(stdout);
-}
-
-void presuspend2()
-{
-  printf("Parent: Presuspend2\n");
-  fflush(stdout);
-}
-
-void precheckpoint()
-{
-  printf("Parent: Precheckpoint\n");
-  fflush(stdout);
-}
-
-void resume()
-{
-  printf("Parent: Resume\n");
-  fflush(stdout);
-}
-
-static void
-presuspend_eventHook(DmtcpEvent_t event, DmtcpEventData_t *data)
-{
-  switch (event) {
-  case DMTCP_EVENT_INIT:
-    break;
-
-  case DMTCP_EVENT_PRESUSPEND:
-    presuspend1();
-    dmtcp_global_barrier("presuspend:barrier1");
-    presuspend2();
-    break;
-
-  case DMTCP_EVENT_PRECHECKPOINT:
-    precheckpoint();
-    break;
-
-  case DMTCP_EVENT_RESUME:
-  case DMTCP_EVENT_RESTART:
-    resume();
-    childPid = 0;
-    break;
-
-  default:
-    break;
-  }
-}
-
-DmtcpPluginDescriptor_t presuspend_plugin = {
-  DMTCP_PLUGIN_API_VERSION,
-  DMTCP_PACKAGE_VERSION,
-  "presuspend",
-  "DMTCP",
-  "dmtcp@ccs.neu.edu",
-  "Presuspend test plugin",
-  presuspend_eventHook
-};
 
 int main()
 {
-  dmtcp_register_plugin(presuspend_plugin);
+  setChildPidPtr(&childPid);
+  if (in_presuspend) {
+    printf("PRESUSPEND event has been received at start of main().\n");
+    exit(1);
+  }
 
   while (1) {
     childPid = fork();
