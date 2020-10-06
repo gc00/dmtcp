@@ -19,9 +19,15 @@ timer_thread(union sigval arg)
 {
   sleep(1);
 
-  //assert_perror(pthread_mutex_lock(&mutex));
+#ifdef __GLIBC__
+  assert_perror(pthread_mutex_lock(&mutex));
   printf("Timer %d\n", counter++);
-  //assert_perror(pthread_mutex_unlock(&mutex));
+  assert_perror(pthread_mutex_unlock(&mutex));
+#else
+  assert(pthread_mutex_lock(&mutex) == 0);
+  printf("Timer %d\n", counter++);
+  assert(pthread_mutex_unlock(&mutex) == 0);
+#endif
 }
 
 int
@@ -48,11 +54,17 @@ main()
 
   printf("Creating timer\n");
   status = timer_create(CLOCK_REALTIME, &se, &timer_id);
-  //assert_perror(status);
+  if (status == -1) {
+    perror("timer_create");
+    assert(0);
+  }
 
   printf("Setting timer %p for 1-second expiration...\n", (void *)timer_id);
   status = timer_settime(timer_id, 0, &ts, 0);
-  //assert_perror(status);
+  if (status == -1) {
+    perror("timer_settime");
+    assert(0);
+  }
 
   while (1) {
     sleep(1);
