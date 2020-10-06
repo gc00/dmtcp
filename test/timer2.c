@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include <stdio.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <sys/time.h>
 #include <unistd.h>
 
