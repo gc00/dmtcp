@@ -122,6 +122,8 @@ class DmtcpCoordinator
     void printStatus(size_t numPeers, bool isRunning);
     string printList();
 
+    void killClients(int sleepBeforeKill = 3);
+
     void processDmtUserCmd(DmtcpMessage &hello_remote, jalib::JSocket &remote);
     bool validateNewWorkerProcess(DmtcpMessage &hello_remote,
                                   jalib::JSocket &remote,

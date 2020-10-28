@@ -445,6 +445,21 @@ DmtcpCoordinator::printList()
 }
 
 void
+DmtcpCoordinator::killClients(int sleepBeforeKill /* default: = 3 */) {
+  if (fork() != 0) { // if parent, return immediately.
+    return;
+  }
+  // Wait sleepBeforeKill seconds, to see if DMT_KILL_PEER will take effect.
+  sleep(sleepBeforeKill);
+  for (size_t i = 0; i < clients.size(); i++) {
+    if (clients[i]->hostname() == "localhost") {
+      kill(clients[i]->realPid(), SIGKILL);
+    }
+    // FIXME:  We could also do:  ssh clients[i]->hostname() kill -9 REAL_PID
+  }
+}
+
+void
 DmtcpCoordinator::releaseBarrier(const string &barrier)
 {
   ComputationStatus status = getStatus();
