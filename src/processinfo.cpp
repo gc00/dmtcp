@@ -483,8 +483,10 @@ ProcessInfo::restoreProcessGroupInfo()
     if (_gid != cgid) {
       JTRACE("Restore Group Assignment")
         (_gid) (_fgid) (cgid) (_pid) (_ppid) (getppid());
+JNOTE("_gid, cgid:")(_gid)(cgid)(_fgid)(_pid)(_ppid);
       JWARNING(setpgid(0, _gid) == 0) (_gid) (JASSERT_ERRNO)
       .Text("Cannot change group information");
+JNOTE("_gid, cgid (completed):")(_gid)(cgid)(_fgid)(_pid)(_ppid);
     } else {
       JTRACE("Group is already assigned") (_gid) (cgid);
     }

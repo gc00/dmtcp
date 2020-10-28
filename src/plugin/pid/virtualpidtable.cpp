@@ -120,6 +120,7 @@ VirtualPidTable::updateMapping(pid_t virtualId, pid_t realId)
     _idMapTable[virtualId] = realId;
     _do_unlock_tbl();
   }
+JNOTE("*** updateMapping: realPid,virtualPid")(realId)(virtualId);
 }
 
 // to allow linking without ptrace plugin
@@ -128,7 +129,9 @@ extern "C" int dmtcp_is_ptracing() __attribute__((weak));
 pid_t
 VirtualPidTable::realToVirtual(pid_t realPid)
 {
-  return VirtualIdTable<pid_t>::realToVirtual(realPid);
+  pid_t virtualPid = VirtualIdTable<pid_t>::realToVirtual(realPid);
+JNOTE("realToVirtual: realPid,virtualPid")(realPid)(virtualPid);
+return virtualPid;
 }
 
 pid_t
@@ -139,8 +142,10 @@ VirtualPidTable::virtualToReal(pid_t virtualId)
   }
   pid_t id = (virtualId < -1 ? abs(virtualId) : virtualId);
   pid_t retVal = VirtualIdTable<pid_t>::virtualToReal(id);
+JNOTE("virtualToReal: virtualPid,realPid")(virtualId)(retVal);
   if (retVal == id) {
     retVal = SharedData::getRealPid(id);
+JNOTE("virtualToReal(id was pos.): virtualPid,realPid")(virtualId)(retVal);
     if (retVal == -1) {
       retVal = id;
     }

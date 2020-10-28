@@ -183,6 +183,7 @@ class VirtualIdTable
       _do_lock_tbl();
       _idMapTable[virtualId] = realId;
       _do_unlock_tbl();
+JNOTE("****** updateMapping: realPid,virtualPid")(realId)(virtualId);
     }
 
     void erase(IdType virtualId)
@@ -203,7 +204,8 @@ class VirtualIdTable
         IdType realId = i->second;
         out << "\t" << virtualId << "\t->   " << realId << "\n";
       }
-      JTRACE("Virtual To Real Mappings:") (_idMapTable.size()) (out.str());
+//      JTRACE("Virtual To Real Mappings:") (_idMapTable.size()) (out.str());
+JNOTE("printMaps: Virtual To Real Mappings:") (_idMapTable.size()) (out.str());
     }
 
     vector<IdType>getIdVector()

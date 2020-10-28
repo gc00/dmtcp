@@ -234,6 +234,7 @@ getpgid(pid_t pid)
   pid_t origPgid = REAL_TO_VIRTUAL_PID(res);
 
   DMTCP_PLUGIN_ENABLE_CKPT();
+JNOTE("getpgid: virtPid->realPid->realPgid->virtPgid")(pid)(realPid)(res)(origPgid);
 
   return origPgid;
 }
@@ -243,10 +244,15 @@ setpgid(pid_t pid, pid_t pgid)
 {
   DMTCP_PLUGIN_DISABLE_CKPT();
 
+JNOTE("pid, pgid")(pid)(pgid);
   pid_t currPid = VIRTUAL_TO_REAL_PID(pid);
   pid_t currPgid = VIRTUAL_TO_REAL_PID(pgid);
+JNOTE("*** BUG: currPgid is old value, never updated ***");
 
+JNOTE("pid, pgdid, realPid, realPgid:")(pid)(pgid)(currPid)(currPgid);
   int retVal = _real_setpgid(currPid, currPgid);
+JNOTE("retVal:")(retVal);
+while(1);
 
   DMTCP_PLUGIN_ENABLE_CKPT();
 
