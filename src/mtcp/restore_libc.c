@@ -615,12 +615,14 @@ TLSInfo_VerifyPidTid(pid_t pid, pid_t tid)
 void
 TLSInfo_UpdatePid()
 {
+#ifdef __GLIBC__
   // For glibc > 2.24, pid field is unused.
   if (glibcMajorVersion() == 2 && glibcMinorVersion() <= 24) {
     pid_t *tls_pid =
       (pid_t *)((char *)get_tls_base_addr() + TLSInfo_GetPidOffset());
     *tls_pid = mtcp_sys_getpid();
   }
+#endif
 }
 
 /*****************************************************************************

@@ -116,7 +116,8 @@ dmtcp_gettid()
     _dmtcp_thread_tid = getpid();
 #else
     // This returns a virtual tid in __GLIBC__.
-    _dmtcp_thread_tid = _real_gettid();
+    // _dmtcp_thread_tid = _real_gettid();
+    _dmtcp_thread_tid = getpid();
 #endif
 
     // Make sure this is the motherofall thread.
