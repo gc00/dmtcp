@@ -264,7 +264,21 @@ pthread_create(pthread_t *thread,
    */
   bool threadCreationLockAcquired = ThreadSync::threadCreationLockLock();
   ThreadSync::incrementUninitializedThreadCount();
+#ifdef __GLIBC__
   retval = _real_pthread_create(thread, attr, pthread_start, threadArg);
+#else
+  struct ThreadArg *cloneArg =
+    (struct ThreadArg *)JALLOC_HELPER_MALLOC(sizeof(struct ThreadArg));
+  cloneArg->pthread_fn = threadArg->pthread_fn;
+  cloneArg->arg = threadArg->arg;
+  /* dmtcp_pid_clone_start -> pid_miscwrappers.cpp:clone_start
+   *                       -> clone_start [in this file]
+   */
+  threadArg->pthread_fn = (__typeof(&pthread_start))clone_start;
+  threadArg->arg = cloneArg;
+  void *dmtcp_pid_clone_start(void *);
+  retval = _real_pthread_create(thread, attr, dmtcp_pid_clone_start, threadArg);
+#endif
   if (threadCreationLockAcquired) {
     ThreadSync::threadCreationLockUnlock();
   }
@@ -272,6 +286,9 @@ pthread_create(pthread_t *thread,
     ProcessInfo::instance().clearPthreadJoinState(*thread);
   } else { // if we failed to create new pthread
     JALLOC_HELPER_FREE(threadArg);
+#ifndef __GLIBC__
+    JALLOC_HELPER_FREE(cloneArg);
+#endif
     ThreadSync::decrementUninitializedThreadCount();
   }
   return retval;

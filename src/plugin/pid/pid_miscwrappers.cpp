@@ -160,6 +160,16 @@ struct ThreadArg {
   sem_t sem;
 };
 
+#ifndef __GLIBC__
+// Invoked via threadwrappers.cpp:_real_pthread_create
+int clone_start(void *arg);
+extern "C" void *
+dmtcp_pid_clone_start(void *arg) {
+  clone_start(arg);
+  return NULL;
+}
+#endif
+
 // Invoked via __clone
 LIB_PRIVATE
 int
