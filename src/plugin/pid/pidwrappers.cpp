@@ -111,6 +111,7 @@ dmtcp_gettid()
    *  ThreadSync::decrementUninitializedThreadCount() and so the value is
    * cached before it is accessed by some other DMTCP code.
    */
+JNOTE("BUG: dmtcp_gettid not getting tid")(_dmtcp_thread_tid);
   if (_dmtcp_thread_tid == -1) {
 #ifdef __GLIBC__
     _dmtcp_thread_tid = getpid();

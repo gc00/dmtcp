@@ -33,6 +33,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <dlfcn.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <malloc.h>
 #include <pthread.h>
@@ -943,20 +944,44 @@ _real___lxstat64(int vers, const char *path, struct stat64 *buf)
 }
 #endif
 
-#ifndef __GLIBC__
-// GLIBC defines weak symbol clone and strong symbol __clone
-// In musl libc, only clone is defined.
-# define __clone clone
-#endif
-
 LIB_PRIVATE
 int
 _real_clone(int (*function)(
               void *), void *child_stack, int flags, void *arg, int *parent_tidptr, struct user_desc *newtls,
             int *child_tidptr)
 {
+#ifdef __GLIBC__
   REAL_FUNC_PASSTHROUGH(__clone) (function, child_stack, flags, arg,
                                   parent_tidptr, newtls, child_tidptr);
+#else
+  // (( ... )) is the GLIBC statement expr
+  #if 0
+  pthread_t thread;
+  int rc = (( REAL_FUNC_PASSTHROUGH_VOID(pthread_create)
+	                               (&thread, NULL, function, arg); ));
+  #else
+  static int (*fn)() = NULL;
+  if (fn == NULL) {
+    if (_real_func_addr[ENUM(pthread_create)] == NULL) {
+      dmtcp_prepare_wrappers();
+    }
+    fn = _real_func_addr[ENUM(pthread_create)];
+    if (fn == NULL) {
+      fprintf(stderr, "*** DMTCP: Error: lookup failed for %s.\n"
+                      "           The symbol wasn't found in current library"
+                      " loading sequence.\n"
+                      "    Aborting.\n", "pthread_create");
+      abort();
+    }
+  }
+  pthread_t thread;
+  int rc = (*fn) (&thread, NULL, function, arg);
+  #endif
+  if (rc > 0) {
+    errno = rc;
+  }
+  return (rc == 0 ? 0 : -1);
+#endif
 }
 
 LIB_PRIVATE
@@ -983,8 +1008,21 @@ _real_pthread_create(pthread_t *thread,
                      void *(*start_routine)(void *),
                      void *arg)
 {
+#ifdef __GLIBC__
   REAL_FUNC_PASSTHROUGH_TYPED(int, pthread_create)
     (thread, attr, start_routine, arg);
+#else
+  // We change signature of fn to return 'void *'
+  int __clone(void * (*fn)(void *), void *stack, int flags, void *arg, ...
+		  /* pid_t *parent_tid, void *tls, pid_t *child_tid */ );
+  pid_t child_tid;
+  int flags = CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND
+                       | CLONE_THREAD | CLONE_SYSVSEM | CLONE_SETTLS
+                       | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID
+                       | CLONE_DETACHED;
+  int rc = __clone(start_routine, NULL, flags, arg, NULL, NULL, &child_tid); 
+  return (rc != -1 ? child_tid : errno);
+#endif
 }
 
 // void _real_pthread_exit(void *retval) __attribute__ ((__noreturn__));

@@ -298,6 +298,10 @@ LIB_PRIVATE extern __thread int thread_performing_dlopen_dlsym;
   MACRO(pthread_sigmask)              \
   MACRO(pthread_getspecific)
 
+#ifndef __GLIBC__
+# undef __clone
+#endif
+
 #define ENUM(x)     enum_ ## x
 
 #define GEN_ENUM(x) ENUM(x),

@@ -390,8 +390,13 @@ _real_clone(int (*function)(
               void *), void *child_stack, int flags, void *arg, int *parent_tidptr, struct user_desc *newtls,
             int *child_tidptr)
 {
+#ifdef __GLIBC__
   REAL_FUNC_PASSTHROUGH(__clone) (function, child_stack, flags, arg,
                                   parent_tidptr, newtls, child_tidptr);
+#else
+  REAL_FUNC_PASSTHROUGH(clone) (function, child_stack, flags, arg,
+                                  parent_tidptr, newtls, child_tidptr);
+#endif
 }
 
 LIB_PRIVATE
