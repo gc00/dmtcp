@@ -230,7 +230,13 @@ static int dmtcp_wrappers_initialized = 0;
 static void
 initialize_libc_wrappers()
 {
+  // Actually, this uses RTLD_NEXT to initialize either to libdmtcp_pid.so
+  // (which comes after libdmtcp.so in library order) or else libc.so
   FOREACH_DMTCP_WRAPPER(GET_FUNC_ADDR);
+# ifndef __GLIBC__
+  GET_FUNC_ADDR(__clone);
+# endif
+
 #ifdef __i386__
 
   /* On i386 systems, there are two pthread_create symbols. We want the one
@@ -946,42 +952,18 @@ _real___lxstat64(int vers, const char *path, struct stat64 *buf)
 
 LIB_PRIVATE
 int
-_real_clone(int (*function)(
-              void *), void *child_stack, int flags, void *arg, int *parent_tidptr, struct user_desc *newtls,
-            int *child_tidptr)
+_real_clone(int (*function)(void *), void *child_stack, int flags, void *arg,
+		int *parent_tidptr, struct user_desc *newtls,
+                int *child_tidptr)
 {
-#ifdef __GLIBC__
+  // FIXME: Note that libdmtcp_pid.so appears after libdmtcp.so in
+  // library search order, even though all other DMTCP libraries appear
+  // before libdmtcp.so.  It is this hack that allows the PASSTHROUGH to
+  // next call libddmtcp_pid.so.  A better solution would have been to
+  // directly call a function, __clone_libpid(), in libdmtcp_pid.so,
+  // so that libdmtcp_pid.so could be placed ahead of libdmtcp.so.
   REAL_FUNC_PASSTHROUGH(__clone) (function, child_stack, flags, arg,
                                   parent_tidptr, newtls, child_tidptr);
-#else
-  // (( ... )) is the GLIBC statement expr
-  #if 0
-  pthread_t thread;
-  int rc = (( REAL_FUNC_PASSTHROUGH_VOID(pthread_create)
-	                               (&thread, NULL, function, arg); ));
-  #else
-  static int (*fn)() = NULL;
-  if (fn == NULL) {
-    if (_real_func_addr[ENUM(pthread_create)] == NULL) {
-      dmtcp_prepare_wrappers();
-    }
-    fn = _real_func_addr[ENUM(pthread_create)];
-    if (fn == NULL) {
-      fprintf(stderr, "*** DMTCP: Error: lookup failed for %s.\n"
-                      "           The symbol wasn't found in current library"
-                      " loading sequence.\n"
-                      "    Aborting.\n", "pthread_create");
-      abort();
-    }
-  }
-  pthread_t thread;
-  int rc = (*fn) (&thread, NULL, function, arg);
-  #endif
-  if (rc > 0) {
-    errno = rc;
-  }
-  return (rc == 0 ? 0 : -1);
-#endif
 }
 
 LIB_PRIVATE

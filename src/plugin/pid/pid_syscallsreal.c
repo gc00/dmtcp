@@ -26,6 +26,7 @@
 // #define GNU_SRC
 // #define __USE_UNIX98
 #include <dlfcn.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/syscall.h>
@@ -386,16 +387,40 @@ _real_vfork()
 
 LIB_PRIVATE
 int
-_real_clone(int (*function)(
-              void *), void *child_stack, int flags, void *arg, int *parent_tidptr, struct user_desc *newtls,
-            int *child_tidptr)
+_real_clone(int (*function)(void *), void *child_stack, int flags, void *arg,
+		int *parent_tidptr, struct user_desc *newtls,
+                int *child_tidptr)
 {
 #ifdef __GLIBC__
   REAL_FUNC_PASSTHROUGH(__clone) (function, child_stack, flags, arg,
                                   parent_tidptr, newtls, child_tidptr);
 #else
+# if 1
+  if (child_stack == NULL) {
+    // musl libc requires that stack be initialized (non-NULL)
+    // This creates a memory leak.  It would be nice if musl libc
+    //   will relax its requirements and allow stack=NULL for __clone().
+    child_stack = mmap(NULL, 8192, PROT_READ|PROT_WRITE,
+                       MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+    // FIXME: Why is this neccessary (at least under musl libc)?
+    child_stack += 4096;
+  }
+  pid_t parent_tid;
   REAL_FUNC_PASSTHROUGH(clone) (function, child_stack, flags, arg,
-                                  parent_tidptr, newtls, child_tidptr);
+                           &parent_tid /*parent_tidptr*/, newtls, child_tidptr);
+# else
+  pthread_t thread;
+  typedef int (* pthread_create_ptr_t )
+	  (pthread_t* thread, const pthread_attr_t *attr,
+	   void*(*start_routine)(void *), void *arg);
+  pthread_create_ptr_t *pthread_create_ptr =
+    dmtcp_dlsym(RTLD_NEXT, "pthread_create");
+  int rc = (*pthread_create_ptr) (&thread, NULL, (void *)function, arg);
+  if (rc != 0) {
+    errno = rc; rc = -1;
+  }
+  return rc;
+# endif
 #endif
 }
 

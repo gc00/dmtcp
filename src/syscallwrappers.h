@@ -133,12 +133,6 @@ LIB_PRIVATE extern __thread int thread_performing_dlopen_dlsym;
 # define openat64 openat64_unused
 #endif
 
-#ifndef __GLIBC__
-// GLIBC defines weak symbol clone and strong symbol __clone
-// In musl libc, only clone is defined.
-# define __clone clone
-#endif
-
 // sigvec, sigblock, etc. are BSD or glibc-internal, but not POSIX;
 // So, it's not defined in musl libc.
 // During DMTCP initialize, it will call dmtcp_dlsym(RTLD_NEXT, "sigvec").
@@ -298,15 +292,18 @@ LIB_PRIVATE extern __thread int thread_performing_dlopen_dlsym;
   MACRO(pthread_sigmask)              \
   MACRO(pthread_getspecific)
 
-#ifndef __GLIBC__
-# undef __clone
-#endif
-
 #define ENUM(x)     enum_ ## x
+
+#ifdef __GLIBC__
+# define ENUM___CLONE
+#else
+# define ENUM___CLONE enum___clone,
+#endif
 
 #define GEN_ENUM(x) ENUM(x),
 typedef enum {
   FOREACH_DMTCP_WRAPPER(GEN_ENUM)
+  ENUM___CLONE
   numLibcWrappers
 } LibcWrapperOffset;
 

@@ -196,12 +196,6 @@ typedef int (*clone_fptr_t)(int (*fn)(void *arg), void *child_stack, int
                             flags, void *arg, int *parent_tidptr,
                             struct user_desc *newtls, int *child_tidptr);
 
-#ifndef __GLIBC__
-  // GLIBC defines weak symbol clone and strong symbol __clone
-  // In musl libc, only clone is defined.
-# define __clone clone
-#endif
-
 // need to forward user clone
 extern "C" int
 __clone(int (*fn)(void *arg),
