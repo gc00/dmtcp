@@ -113,6 +113,7 @@ dmtcplib_PROGRAMS = $(d_libdir)/libdmtcp.so$(EXEEXT)
 @AARCH64_HOST_TRUE@am__append_4 = -latomic
 @AARCH64_HOST_TRUE@am__append_5 = -latomic
 @AARCH64_HOST_TRUE@am__append_6 = -latomic
+@AARCH64_HOST_TRUE@am__append_7 = mtcp/syscall-aarch64.$(OBJEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cxx_compile_stdcxx.m4 \
@@ -213,7 +214,7 @@ am___d_libdir__libdmtcp_so_OBJECTS = alarm.$(OBJEXT) \
 	syslogwrappers.$(OBJEXT) terminal.$(OBJEXT) \
 	threadlist.$(OBJEXT) threadsync.$(OBJEXT) \
 	threadwrappers.$(OBJEXT) wrapperlock.$(OBJEXT) \
-	wrappers.$(OBJEXT) writeckpt.$(OBJEXT)
+	wrappers.$(OBJEXT) writeckpt.$(OBJEXT) $(am__append_7)
 __d_libdir__libdmtcp_so_OBJECTS =  \
 	$(am___d_libdir__libdmtcp_so_OBJECTS)
 __d_libdir__libdmtcp_so_DEPENDENCIES = libdmtcpinternal.a libjalib.a \
