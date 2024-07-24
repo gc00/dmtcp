@@ -8938,8 +8938,8 @@ then :
 fi
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $CC atomic builtins" >&5
-printf %s "checking for $CC atomic builtins... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $CC __sync_bool_compare_and_swap builtins" >&5
+printf %s "checking for $CC __sync_bool_compare_and_swap builtins... " >&6; }
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -9092,8 +9092,10 @@ printf "%s\n" "$gccAtomicBuiltins" >&6; }
 if test "$gccAtomicBuiltins" = "no"; then
   { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 printf "%s\n" "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Support for atomic built-ins is required to build DMTCP.
-                  Consider using GCC 4.1 or newer.
+as_fn_error $? "Using C++14, which should support both sync and atomic
+                  built-ins.  Something is seriously wrong.
+                  In jalloc.cpp, replace atomic by sync if the
+                  sync test succeeded, and then edit './configure'.
 See \`config.log' for more details" "$LINENO" 5; }
 fi
 
