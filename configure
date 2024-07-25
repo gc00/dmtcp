@@ -8938,8 +8938,8 @@ then :
 fi
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $CC atomic builtins" >&5
-printf %s "checking for $CC atomic builtins... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $CXX __sync_bool_compare_and_swap builtins" >&5
+printf %s "checking for $CXX __sync_bool_compare_and_swap builtins... " >&6; }
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -8957,8 +8957,8 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
     int main() {
       typedef unsigned __int128 uint128_t;
       uint128_t val = static_cast<uint128_t>(1);
-      bool result = __sync_bool_compare_and_swap(&val, 1, 0);
-      assert(result == true && static_cast<int>(val) == 1);
+      bool result = __sync_bool_compare_and_swap(&val, 1, 2);
+      assert(result == true && static_cast<int>(val) == 2);
       return 0;
     }
 
@@ -9038,14 +9038,17 @@ if test ${ac_cv_lib_atomic_+y}; then
   printf %s "***   replace __atomic_* by __sync_*."
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $CC __atomic_compare_exchange builtins" >&5
-printf %s "checking for $CC __atomic_compare_exchange builtins... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $CXX __atomic_compare_exchange builtins using -latomic" >&5
+printf %s "checking for $CXX __atomic_compare_exchange builtins using -latomic... " >&6; }
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
+# It seems to be undocumented that this needs '-latomic' as of 2024.
+LDFLAGS_orig="$LDFLAGS"
+LDFLAGS="$LDFLAGS -latomic"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9080,6 +9083,7 @@ else $as_nop
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
+LDFLAGS="$LDFLAGS_orig"
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -9092,8 +9096,10 @@ printf "%s\n" "$gccAtomicBuiltins" >&6; }
 if test "$gccAtomicBuiltins" = "no"; then
   { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 printf "%s\n" "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Support for atomic built-ins is required to build DMTCP.
-                  Consider using GCC 4.1 or newer.
+as_fn_error $? "Using C++14, which should support both sync and atomic
+                  built-ins.  Something is seriously wrong.
+                  In jalloc.cpp, replace atomic by sync if the
+                  sync test succeeded, and then edit './configure'.
 See \`config.log' for more details" "$LINENO" 5; }
 fi
 
