@@ -798,12 +798,67 @@ AC_MSG_CHECKING(for $CC atomic builtins)
 dnl Since we'll be using these atomic builtins in C++ files we should test
 dnl the C++ compiler.
 AC_LANG_PUSH([C++])
+dnl C++ standard set for C++14.  If standalone, use: -std=c++14 -march=native
+CXXFLAGS_orig="$CXXFLAGS"
+CXXFLAGS="$CXXFLAGS -march=native"
 AC_LINK_IFELSE(
 [
   AC_LANG_SOURCE([[
+    #include <assert.h>
+    #include <stdlib.h>
     int main() {
-      volatile unsigned long val = 1;
-      __sync_bool_compare_and_swap(&val, 1, 0);
+      typedef unsigned __int128 uint128_t;
+      uint128_t val = static_cast<uint128_t>(1);
+      bool result = __sync_bool_compare_and_swap(&val, 1, 0);
+      assert(result == true && static_cast<int>(val) == 1);
+      return 0;
+    }
+  ]])
+], [gccSyncBuiltins='yes'], [gccSyncBuiltins='no'])
+CXXFLAGS="$CXXFLAGS_orig"
+AC_LANG_POP([C++])
+AC_MSG_RESULT([$gccSyncBuiltins])
+
+if test "$gccSyncBuiltins" = "no"; then
+  AC_MSG_FAILURE([Support for __sync_bool_compare_and_swap built-ins
+                  is required to build DMTCP.])
+fi
+dnl Else can use mutex implementation; see jalib/jalloc.cpp
+
+dnl NOTE:  Using __atomic_* requires linking with -latomic.
+dnl        If libatomic not available, then we must switch to __sync_*.
+dnl        __atomic_compare_exchange_16 is the 16-byte (128-bit) version.
+AC_CHECK_LIB([atomic], [__atomic_compare_exchange_16])
+if test ${ac_cv_lib_atomic_+y}; then
+  printf %s "*** libatomic.so not found; In jalib/jalloc.cpp need to"
+  printf %s "***   replace __atomic_* by __sync_*."
+fi
+
+dnl atomic builtins are required for jalloc support.
+AC_MSG_CHECKING(for $CC __atomic_compare_exchange builtins)
+dnl Since we'll be using these atomic builtins in C++ files we should test
+dnl the C++ compiler.
+AC_LANG_PUSH([C++])
+AC_LINK_IFELSE(
+[
+  AC_LANG_SOURCE([[
+    #include <atomic>
+    #include <assert.h>
+    #include <stdlib.h>
+    int main() {
+      typedef unsigned __int128 uint128_t;
+      uint128_t *dst = static_cast<uint128_t*>(malloc(128));
+      uint128_t *oldValue = static_cast<uint128_t*>(malloc(128));
+      uint128_t *newValue = static_cast<uint128_t*>(malloc(128));
+      *dst = static_cast<uint128_t>(1);
+      *oldValue = static_cast<uint128_t>(1);
+      *newValue = static_cast<uint128_t>(2);
+      bool result = __atomic_compare_exchange((uint128_t*)dst,
+                                         (uint128_t*)oldValue,
+                                         (uint128_t*)newValue, 0,
+                                          __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+      assert(result == true);
+      assert(dst == newValue);
       return 0;
     }
   ]])
