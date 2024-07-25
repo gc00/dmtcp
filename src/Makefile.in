@@ -110,6 +110,9 @@ bin_PROGRAMS = $(d_bindir)/dmtcp_command$(EXEEXT) \
 dmtcplib_PROGRAMS = $(d_libdir)/libdmtcp.so$(EXEEXT)
 # FIXME: This depends on configure showing __atomic_* exists, not on aarch64
 @AARCH64_HOST_TRUE@am__append_2 = -latomic
+# HACK:  Makefile.am does not have this line.
+#        We need to modify tls.cpp to use getpid/gettid for '#ifdef __aarch64__'
+@AARCH64_HOST_TRUE@am__append_7 = mtcp/syscall-aarch64.$(OBJEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cxx_compile_stdcxx.m4 \
@@ -208,7 +211,7 @@ am___d_libdir__libdmtcp_so_OBJECTS = alarm.$(OBJEXT) \
 	syslogwrappers.$(OBJEXT) terminal.$(OBJEXT) \
 	threadlist.$(OBJEXT) threadsync.$(OBJEXT) \
 	threadwrappers.$(OBJEXT) wrapperlock.$(OBJEXT) \
-	wrappers.$(OBJEXT) writeckpt.$(OBJEXT)
+	wrappers.$(OBJEXT) writeckpt.$(OBJEXT) $(am__append_7)
 __d_libdir__libdmtcp_so_OBJECTS =  \
 	$(am___d_libdir__libdmtcp_so_OBJECTS)
 am__DEPENDENCIES_1 =
