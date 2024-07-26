@@ -35,6 +35,7 @@ void *do_thread_work(void * dummy) {
       }
     }
   }
+  return NULL;
 }
 
 void do_child_work() {
