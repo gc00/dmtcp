@@ -230,7 +230,7 @@ __d_libdir__libdmtcp_so_LDADD += -latomic
 endif
 
 if CONFIG_MANA_HELPER_DIR
-__d_bindir__dmtcp_restart_SOURCES += $(MANA_HELPER_DIR)/dmtcp_restart_plugin.cpp
+# __d_bindir__dmtcp_restart_SOURCES += $(MANA_HELPER_DIR)/dmtcp_restart_plugin.cpp
 endif
 
 install-libs: install-dmtcplibPROGRAMS

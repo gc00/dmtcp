@@ -1564,7 +1564,7 @@ Optional Packages:
                           Compile mpich3 tests in `make check`
   --with-mana-helper-dir=manadir
                           Directory containing additional mana-specific
-                          helpers.
+                          helpers. (NOT WORKING)
 
 Some influential environment variables:
   CXX         C++ compiler command
