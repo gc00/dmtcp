@@ -1475,6 +1475,8 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dmtcplibPROGRAMS \
 .PRECIOUS: Makefile
 
 
+# __d_bindir__dmtcp_restart_SOURCES += $(MANA_HELPER_DIR)/dmtcp_restart_plugin.cpp
+
 install-libs: install-dmtcplibPROGRAMS
 	(cd mtcp && ${MAKE} install-libs)
 	(cd plugin && ${MAKE} install-libs)
