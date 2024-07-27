@@ -148,10 +148,10 @@ mtcp_restart_process_args(int argc, char *argv[], char **environ, void (*restore
       rinfo.stderr_fd = mtcp_strtol(argv[1]);
       shift; shift;
     } else if (mtcp_strcmp(argv[0], "--restore-buffer-addr") == 0) {
-      rinfo.restore_addr = (VA) mtcp_strtol(argv[1]);
+      rinfo->restore_addr = (VA) mtcp_strtol(argv[1]);
       shift; shift;
     } else if (mtcp_strcmp(argv[0], "--restore-buffer-len") == 0) {
-      rinfo.restore_size = mtcp_strtol(argv[1]);
+      rinfo->restore_size = mtcp_strtol(argv[1]);
       shift; shift;
     } else if (mtcp_strcmp(argv[0], "--mtcp-restart-pause") == 0) {
       rinfo.restart_pause = argv[1][0] - '0'; /* true */
