@@ -768,7 +768,7 @@ fi
 
 AC_ARG_WITH([mana_helper_dir],
             [AS_HELP_STRING([--with-mana-helper-dir=manadir],
-                            [Directory containing additional mana-specific helpers.])],
+                            [Directory containing additional mana-specific helpers. (NOT WORKING)])],
             [mana_helper_dir=$withval],
             [mana_helper_dir=no])
 

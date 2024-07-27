@@ -110,7 +110,6 @@ bin_PROGRAMS = $(d_bindir)/dmtcp_command$(EXEEXT) \
 dmtcplib_PROGRAMS = $(d_libdir)/libdmtcp.so$(EXEEXT)
 # FIXME: This depends on configure showing __atomic_* exists, not on aarch64
 @AARCH64_HOST_TRUE@am__append_2 = -latomic
-@CONFIG_MANA_HELPER_DIR_TRUE@am__append_3 = $(MANA_HELPER_DIR)/dmtcp_restart_plugin.cpp
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cxx_compile_stdcxx.m4 \
@@ -188,11 +187,7 @@ am___d_bindir__dmtcp_nocheckpoint_OBJECTS =  \
 __d_bindir__dmtcp_nocheckpoint_OBJECTS =  \
 	$(am___d_bindir__dmtcp_nocheckpoint_OBJECTS)
 __d_bindir__dmtcp_nocheckpoint_LDADD = $(LDADD)
-am____d_bindir__dmtcp_restart_SOURCES_DIST = dmtcp_restart.cpp \
-	$(MANA_HELPER_DIR)/dmtcp_restart_plugin.cpp
-@CONFIG_MANA_HELPER_DIR_TRUE@am__objects_1 = $(MANA_HELPER_DIR)/dmtcp_restart_plugin.$(OBJEXT)
-am___d_bindir__dmtcp_restart_OBJECTS = dmtcp_restart.$(OBJEXT) \
-	$(am__objects_1)
+am___d_bindir__dmtcp_restart_OBJECTS = dmtcp_restart.$(OBJEXT)
 __d_bindir__dmtcp_restart_OBJECTS =  \
 	$(am___d_bindir__dmtcp_restart_OBJECTS)
 __d_bindir__dmtcp_restart_DEPENDENCIES = libdmtcpinternal.a libjalib.a \
@@ -231,9 +226,8 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade =  \
-	$(MANA_HELPER_DIR)/$(DEPDIR)/dmtcp_restart_plugin.Po \
-	$(jalibdir)/$(DEPDIR)/jalib.Po $(jalibdir)/$(DEPDIR)/jalloc.Po \
+am__depfiles_remade = $(jalibdir)/$(DEPDIR)/jalib.Po \
+	$(jalibdir)/$(DEPDIR)/jalloc.Po \
 	$(jalibdir)/$(DEPDIR)/jassert.Po \
 	$(jalibdir)/$(DEPDIR)/jbuffer.Po \
 	$(jalibdir)/$(DEPDIR)/jfilesystem.Po \
@@ -309,7 +303,7 @@ DIST_SOURCES = $(libdmtcpinternal_a_SOURCES) $(libjalib_a_SOURCES) \
 	$(__d_bindir__dmtcp_get_libc_offset_SOURCES) \
 	$(__d_bindir__dmtcp_launch_SOURCES) \
 	$(__d_bindir__dmtcp_nocheckpoint_SOURCES) \
-	$(am____d_bindir__dmtcp_restart_SOURCES_DIST) \
+	$(__d_bindir__dmtcp_restart_SOURCES) \
 	$(__d_libdir__libdmtcp_so_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
@@ -710,7 +704,7 @@ __d_bindir__dmtcp_launch_LDADD = libdmtcpinternal.a 		\
 				  libnohijack.a			\
 				  -lpthread -lrt -ldl
 
-__d_bindir__dmtcp_restart_SOURCES = dmtcp_restart.cpp $(am__append_3)
+__d_bindir__dmtcp_restart_SOURCES = dmtcp_restart.cpp
 __d_bindir__dmtcp_restart_LDADD = libdmtcpinternal.a 		\
 				   libjalib.a 			\
 				   libnohijack.a		\
@@ -907,15 +901,6 @@ $(d_bindir)/dmtcp_launch$(EXEEXT): $(__d_bindir__dmtcp_launch_OBJECTS) $(__d_bin
 $(d_bindir)/dmtcp_nocheckpoint$(EXEEXT): $(__d_bindir__dmtcp_nocheckpoint_OBJECTS) $(__d_bindir__dmtcp_nocheckpoint_DEPENDENCIES) $(EXTRA___d_bindir__dmtcp_nocheckpoint_DEPENDENCIES) $(d_bindir)/$(am__dirstamp)
 	@rm -f $(d_bindir)/dmtcp_nocheckpoint$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(__d_bindir__dmtcp_nocheckpoint_OBJECTS) $(__d_bindir__dmtcp_nocheckpoint_LDADD) $(LIBS)
-$(MANA_HELPER_DIR)/$(am__dirstamp):
-	@$(MKDIR_P) $(MANA_HELPER_DIR)
-	@: > $(MANA_HELPER_DIR)/$(am__dirstamp)
-$(MANA_HELPER_DIR)/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) $(MANA_HELPER_DIR)/$(DEPDIR)
-	@: > $(MANA_HELPER_DIR)/$(DEPDIR)/$(am__dirstamp)
-$(MANA_HELPER_DIR)/dmtcp_restart_plugin.$(OBJEXT):  \
-	$(MANA_HELPER_DIR)/$(am__dirstamp) \
-	$(MANA_HELPER_DIR)/$(DEPDIR)/$(am__dirstamp)
 
 $(d_bindir)/dmtcp_restart$(EXEEXT): $(__d_bindir__dmtcp_restart_OBJECTS) $(__d_bindir__dmtcp_restart_DEPENDENCIES) $(EXTRA___d_bindir__dmtcp_restart_DEPENDENCIES) $(d_bindir)/$(am__dirstamp)
 	@rm -f $(d_bindir)/dmtcp_restart$(EXEEXT)
@@ -930,13 +915,11 @@ $(d_libdir)/libdmtcp.so$(EXEEXT): $(__d_libdir__libdmtcp_so_OBJECTS) $(__d_libdi
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
-	-rm -f $(MANA_HELPER_DIR)/*.$(OBJEXT)
 	-rm -f $(jalibdir)/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@$(MANA_HELPER_DIR)/$(DEPDIR)/dmtcp_restart_plugin.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(jalibdir)/$(DEPDIR)/jalib.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(jalibdir)/$(DEPDIR)/jalloc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@$(jalibdir)/$(DEPDIR)/jassert.Po@am__quote@ # am--include-marker
@@ -1248,8 +1231,6 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
-	-test -z "$(MANA_HELPER_DIR)/$(DEPDIR)/$(am__dirstamp)" || rm -f $(MANA_HELPER_DIR)/$(DEPDIR)/$(am__dirstamp)
-	-test -z "$(MANA_HELPER_DIR)/$(am__dirstamp)" || rm -f $(MANA_HELPER_DIR)/$(am__dirstamp)
 	-test -z "$(d_bindir)/$(am__dirstamp)" || rm -f $(d_bindir)/$(am__dirstamp)
 	-test -z "$(d_libdir)/$(am__dirstamp)" || rm -f $(d_libdir)/$(am__dirstamp)
 	-test -z "$(jalibdir)/$(DEPDIR)/$(am__dirstamp)" || rm -f $(jalibdir)/$(DEPDIR)/$(am__dirstamp)
@@ -1264,8 +1245,7 @@ clean-am: clean-binPROGRAMS clean-dmtcplibPROGRAMS clean-generic \
 	clean-noinstLIBRARIES mostlyclean-am
 
 distclean: distclean-recursive
-		-rm -f $(MANA_HELPER_DIR)/$(DEPDIR)/dmtcp_restart_plugin.Po
-	-rm -f $(jalibdir)/$(DEPDIR)/jalib.Po
+		-rm -f $(jalibdir)/$(DEPDIR)/jalib.Po
 	-rm -f $(jalibdir)/$(DEPDIR)/jalloc.Po
 	-rm -f $(jalibdir)/$(DEPDIR)/jassert.Po
 	-rm -f $(jalibdir)/$(DEPDIR)/jbuffer.Po
@@ -1371,8 +1351,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
-		-rm -f $(MANA_HELPER_DIR)/$(DEPDIR)/dmtcp_restart_plugin.Po
-	-rm -f $(jalibdir)/$(DEPDIR)/jalib.Po
+		-rm -f $(jalibdir)/$(DEPDIR)/jalib.Po
 	-rm -f $(jalibdir)/$(DEPDIR)/jalloc.Po
 	-rm -f $(jalibdir)/$(DEPDIR)/jassert.Po
 	-rm -f $(jalibdir)/$(DEPDIR)/jbuffer.Po
@@ -1472,6 +1451,8 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dmtcplibPROGRAMS \
 
 .PRECIOUS: Makefile
 
+
+# __d_bindir__dmtcp_restart_SOURCES += $(MANA_HELPER_DIR)/dmtcp_restart_plugin.cpp
 
 install-libs: install-dmtcplibPROGRAMS
 	(cd mtcp && ${MAKE} install-libs)
