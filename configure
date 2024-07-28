@@ -1564,7 +1564,7 @@ Optional Packages:
                           Compile mpich3 tests in `make check`
   --with-mana-helper-dir=manadir
                           Directory containing additional mana-specific
-                          helpers.
+                          helpers (NOT WORKING).
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -3004,7 +3004,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-# TODO(kapil): Add 'subdir-objects after automake 1.16 has been released.
 am__api_version='1.16'
 
 
@@ -5624,7 +5623,6 @@ else
 fi
 
 
-
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -6419,9 +6417,9 @@ enable_option_checking=fatal
 if test -n "$ac_unrecognized_opts"; then
   case $enable_option_checking in
     no) ;;
-    fatal) { $as_echo "$as_me: error: unrecognized options: $ac_unrecognized_opts" >&2
+    fatal) {  printf "%s\n" "$as_me: error: unrecognized options: $ac_unrecognized_opts" >&2
    { (exit 1); exit 1; }; } ;;
-    *)     $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2 ;;
+    *)     printf "%s\n" "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2 ;;
   esac
 fi
 
@@ -8893,6 +8891,9 @@ fi
 
 if test "$mana_helper_dir" != "no"; then
   MANA_HELPER_DIR=`realpath $mana_helper_dir`
+
+else
+  MANA_HELPER_DIR=""
 
 fi
 

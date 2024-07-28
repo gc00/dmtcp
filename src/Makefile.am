@@ -229,8 +229,12 @@ if AARCH64_HOST
 __d_libdir__libdmtcp_so_LDADD += -latomic
 endif
 
+# automake-2.71 has a bug.  When the if statment is _not_ triggered
+#  if the body is uncommented, then automake uses the body
+#  that was _not_ triggered for Maekfile.in.  
+# This seems to be an argument for abandoning Makefile.am: large and buggy.
 if CONFIG_MANA_HELPER_DIR
-__d_bindir__dmtcp_restart_SOURCES += $(MANA_HELPER_DIR)/dmtcp_restart_plugin.cpp
+#   __d_bindir__dmtcp_restart_SOURCES += $(MANA_HELPER_DIR)/dmtcp_restart_plugin.cpp
 endif
 
 install-libs: install-dmtcplibPROGRAMS
