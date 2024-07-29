@@ -153,10 +153,17 @@ bool_atomic_dwcas(void volatile *dst, void *oldValue, void *newValue)
 #elif __aarch64__
   // This requires libatomic.so
   typedef unsigned __int128 uint128_t;
+# if 1
+  // This requires compiling with -mcx16
+  result = __sync_bool_compare_and_swap((uint128_t volatile *)dst,
+                                        *(uint128_t*)oldValue,
+                                        *(uint128_t*)newValue);
+# else
   result = __atomic_compare_exchange((uint128_t*)dst,
                                      (uint128_t*)oldValue,
                                      (uint128_t*)newValue, 0,
                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+# endif
 #endif /* if __x86_64__ */
   return result;
 }
