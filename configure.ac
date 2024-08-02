@@ -830,7 +830,7 @@ dnl Else can use mutex implementation; see jalib/jalloc.cpp
 dnl NOTE:  Using __atomic_* requires linking with -latomic.
 dnl        If libatomic not available, then we must switch to __sync_*.
 dnl        __atomic_compare_exchange_16 is the 16-byte (128-bit) version.
-if test "$is_arm_host" == "yes" || "$is_i486_host" == "yes" ; then
+if test "$is_arm_host" == "yes" -o "$is_i486_host" == "yes" ; then
   AC_CHECK_LIB([atomic], [__atomic_compare_exchange_8])
 else
   AC_CHECK_LIB([atomic], [__atomic_compare_exchange_16])
