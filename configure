@@ -8990,7 +8990,52 @@ as_fn_error $? "Support for __sync_bool_compare_and_swap built-ins
 See \`config.log' for more details" "$LINENO" 5; }
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __atomic_compare_exchange_16 in -latomic" >&5
+if test "$is_arm_host" == "yes" -o "$is_i486_host" == "yes" ; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __atomic_compare_exchange_8 in -latomic" >&5
+printf %s "checking for __atomic_compare_exchange_8 in -latomic... " >&6; }
+if test ${ac_cv_lib_atomic___atomic_compare_exchange_8+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-latomic  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char __atomic_compare_exchange_8 ();
+int
+main (void)
+{
+return __atomic_compare_exchange_8 ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_atomic___atomic_compare_exchange_8=yes
+else $as_nop
+  ac_cv_lib_atomic___atomic_compare_exchange_8=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_atomic___atomic_compare_exchange_8" >&5
+printf "%s\n" "$ac_cv_lib_atomic___atomic_compare_exchange_8" >&6; }
+if test "x$ac_cv_lib_atomic___atomic_compare_exchange_8" = xyes
+then :
+  printf "%s\n" "#define HAVE_LIBATOMIC 1" >>confdefs.h
+
+  LIBS="-latomic $LIBS"
+
+fi
+
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __atomic_compare_exchange_16 in -latomic" >&5
 printf %s "checking for __atomic_compare_exchange_16 in -latomic... " >&6; }
 if test ${ac_cv_lib_atomic___atomic_compare_exchange_16+y}
 then :
@@ -9033,6 +9078,7 @@ then :
 
 fi
 
+fi
 if test ${ac_cv_lib_atomic_+y}; then
   printf %s "*** libatomic.so not found; In jalib/jalloc.cpp need to"
   printf %s "***   replace __atomic_* by __sync_*."
@@ -9069,7 +9115,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
                                          (uint128_t*)newValue, 0,
                                           __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
       assert(result == true);
-      assert(dst == newValue);
+      assert(*dst == *newValue);
       return 0;
     }
 
@@ -9098,8 +9144,8 @@ if test "$gccAtomicBuiltins" = "no"; then
 printf "%s\n" "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "Using C++14, which should support both sync and atomic
                   built-ins.  Something is seriously wrong.
-                  In jalloc.cpp, replace atomic by sync if the
-                  sync test succeeded, and then edit './configure'.
+                  In jalloc.cpp, replace __atomic by __sync_bool if the
+                  __sync_bool test succeeded, and then edit './configure'.
 See \`config.log' for more details" "$LINENO" 5; }
 fi
 
