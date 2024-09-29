@@ -510,16 +510,75 @@ writememoryarea(int fd, Area area)
       } else {
         area.mmapFileSize = statbuf.st_size - area.offset;
       }
+    } else {
+      JNOTE("stat(area.anem, ...) failed")((char *)area.name);
+    }
+
+int testing = 0;
+if (strcmp(area.name, "/usr/lib/aarch64-linux-gnu/libsodium.so.23.3.0") == 0){
+int dummy=1;
+printf("Is libsodium\n");
+      // while(dummy);
+static int stop = 1;
+if (stop-- == 0) {
+  int dummy=1;
+testing = 1;
+}
+}
+
+    // Test if weird segment: mprotect added PROT_READ, but we can't read it.
+    // This aasEncountered with Linux kernel 6.6 (Debian 12) on ARM64, with
+    // libsodium.so:  3 memory segments: r-xp, ---p, rw-p; We're at ---p.
+    int fd_test = open("/dev/null", O_WRONLY);
+    int rc = Util::writeAll(fd_test, area.addr, area.mmapFileSize);
+    // FIXME:  Note that just because we can't write all of this, we
+    //         can probably write the first few pages.  We do need to
+    //         checkpoint that.  Do fsync and msync help here to write
+    //         it out, and then have the kernel split this segment
+    //         into two segments, one that has extended the file,
+    //         and one that has no backing because it is beyond the
+    //         end of the file?
+if (!testing)
+    close(fd_test);
+if (testing) {
+printf("rc: %d, errno: %d\n", rc, errno);
+}
+    if (rc == -1 && errno == EFAULT && area.prot == 0) {
+      // If we had known in advance, we would write zero pages in the header.
+printf("**** Writing DMTCP_ZERO_PAGE;\n");
+      area.properties |= DMTCP_ZERO_PAGE;
     }
 
     writeAreaHeader(fd, &area);
     // NOTE: We cannot use lseek(SEEK_CUR) to detect how much data was
     // actually written here. This is because fd might be a pipe to gzip.
-    if (area.mmapFileSize > 0) {
+if (testing) {
+printf("testing: Did area header\n");
+printf("area.addr: %p, area.size: %p, area.mmapFileSize: %p\n",
+		area.addr, (void *)area.size, (void *)area.mmapFileSize);
+printf("statbuf.st_size: %p, sizeof(statbuf.st_size): %ld, area.offset: %ld\n",
+       	(void *)statbuf.st_size, sizeof(statbuf.st_size), (size_t)area.offset);
+printf("statbuf.st_blksize: %p, sizeof(statbuf.st_blksize): %ld\n",
+       	(void *)statbuf.st_size, sizeof(statbuf.st_size));
+
+printf("stabuf.st_size-area.offset: %ld\n", statbuf.st_size - area.offset);
+printf("stabuf.st_size-area.offset < 0: %d\n", statbuf.st_size - area.offset < 0);
+int test_offset = (statbuf.st_size - area.offset < 0);
+printf("\nn\n*********** test_offset: %d\n", test_offset);fflush(stdout);
+if (test_offset == 1) {
+	printf("************ BUG:  statbuf.st_size - area.offset  < 0"); fflush(stdout);
+}
+printf("*********** test_offset AFTER: %d\n", test_offset);fflush(stdout);
+}
+    if (area.properties & DMTCP_ZERO_PAGE) {
+      // Do nothing for a DMTCP_ZERO_PAGE.
+printf("**** Finishing DMTCP_ZERO_PAGE;\n");
+    } else if (area.mmapFileSize > 0) {
       JASSERT(Util::writeAll(fd, area.addr, area.mmapFileSize) ==
               (ssize_t)area.mmapFileSize);
     } else {
       JASSERT(Util::writeAll(fd, area.addr, area.size) == (ssize_t)area.size);
     }
+if (testing) printf("testing: Did area segment\n");
   }
 }

@@ -244,11 +244,14 @@ ProcessInfo::growStack()
 
       // FIXME : If the area following the stack is not empty, don't
       // exercise this path.
-      int ret = mprotect(area.addr + area.size, 0x1000,
-                         PROT_READ | PROT_WRITE | PROT_EXEC);
-      if (ret == 0) {
-        JTRACE("bottommost page of stack (page with highest address) was"
-               " invisible in /proc/self/maps. It is made visible again now.");
+      // Encountered 0x80... with kernel 6.6, Debian 12, arm64, 'make check-vim'
+      if ((unsigned long)area.addr + area.size + 0x1000 < 0x800000000000) {
+        int ret = mprotect(area.addr + area.size, 0x1000,
+                           PROT_READ | PROT_WRITE | PROT_EXEC);
+        if (ret == 0) {
+          JTRACE("bottommost page of stack (page with highest address) was"
+                 " invisible in /proc/self/maps. It is made visible again now.");
+        }
       }
     }
   }
