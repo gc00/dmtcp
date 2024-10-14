@@ -435,6 +435,9 @@ bool waitForBarrier(const string& barrier,
   strcpy(barrierMsg.barrier, barrier.c_str());
 
   sendMsgToCoordinator(barrierMsg);
+if (strcmp(barrier.c_str(), "DMT:WriteCkpt") == 0) {
+sleep(5);
+}
 
   JTRACE("waiting for DMT_BARRIER_RELEASED message") (barrier);
 
