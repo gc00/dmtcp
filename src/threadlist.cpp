@@ -890,6 +890,7 @@ void
 ThreadList::postRestartWork()
 {
   Thread *thread;
+  Thread *next;
   sigset_t tmp;
 
   if (TLSInfo_HaveThreadSysinfoOffset()) {
@@ -909,7 +910,10 @@ ThreadList::postRestartWork()
   Util::allowGdbDebug(DEBUG_POST_RESTART);
 
   sigfillset(&tmp);
-  for (thread = activeThreads; thread != NULL; thread = thread->next) {
+  for (thread = activeThreads; thread != NULL; thread = next) {
+    // Precompute 'next' now, in case 'thread' is declared dead below.
+    next = thread->next;
+
     sigandset(&sigpending_global, &tmp, &(thread->sigpending));
     tmp = sigpending_global;
 
